@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const orderSchema = new mongoose.Schema(
+const billSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -16,6 +16,7 @@ const orderSchema = new mongoose.Schema(
         },
         quantity: {
           type: Number,
+          required: true,
           default: 1,
         },
         price: {
@@ -32,16 +33,14 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    discount: {
-      type: Number,
-      default: 0,
-    },
-    coupon: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Coupon",
-    },
     tax: {
       type: Number,
+      required: true,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      required: true,
       default: 0,
     },
     grandTotal: {
@@ -51,11 +50,6 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: {
       type: String,
       enum: ["Pending", "Paid", "Failed", "Refunded"],
-      default: "Pending",
-    },
-    orderStatus: {
-      type: String,
-      enum: ["Pending", "Processing", "Completed", "Cancelled"],
       default: "Pending",
     },
     paymentMethod: {
@@ -71,13 +65,9 @@ const orderSchema = new mongoose.Schema(
       default: "UPI",
     },
     transactionId: {
-      type: String, // from payment gateway
+      type: String, // from Razorpay/Stripe/PayPal etc.
     },
-    bill: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Bill",
-    },
-    orderDate: {
+    billDate: {
       type: Date,
       default: Date.now,
     },
@@ -85,4 +75,4 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Order", orderSchema);
+export default mongoose.model("Bill", billSchema);
