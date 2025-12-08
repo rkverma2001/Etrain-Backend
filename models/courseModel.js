@@ -8,8 +8,8 @@ const tabDataSchema = new mongoose.Schema({
 });
 
 const curriculumSchema = new mongoose.Schema({
-  question: { type: String, required: true }, // Example: "MODULE 1 | 1 HOUR"
-  answers: [{ type: String }], // Example: ["Working in...", "Purpose, Audience..."]
+  question: { type: String, required: true },
+  answers: [{ type: String }],
 });
 
 const certificateSchema = new mongoose.Schema({
@@ -31,7 +31,7 @@ const courseSchema = new mongoose.Schema(
       Courseware: tabDataSchema,
     },
 
-    curriculum: [curriculumSchema], // Array of modules
+    curriculum: [curriculumSchema],
 
     banner: {
       videoUrl: { type: String },

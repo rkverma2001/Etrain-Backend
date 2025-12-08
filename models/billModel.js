@@ -65,7 +65,7 @@ const billSchema = new mongoose.Schema(
       default: "UPI",
     },
     transactionId: {
-      type: String, // from Razorpay/Stripe/PayPal etc.
+      type: String,
     },
     billDate: {
       type: Date,

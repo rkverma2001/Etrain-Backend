@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
@@ -7,82 +7,38 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    items: [
-      {
-        course: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Course",
-          required: true,
+    cart: {
+      items: [
+        {
+          course: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Course",
+            required: true,
+          },
+          packageType: {
+            type: String,
+            enum: ["Bundle", "Exam Voucher", "Practice Test", "Courseware"],
+            required: true,
+          },
+          quantity: { type: Number, default: 1 },
+          price: { type: Number, required: true },
+          total: { type: Number, required: true },
         },
-        quantity: {
-          type: Number,
-          default: 1,
-        },
-        price: {
-          type: Number,
-          required: true,
-        },
-        total: {
-          type: Number,
-          required: true,
-        },
-      },
-    ],
-    subtotal: {
-      type: Number,
-      required: true,
-    },
-    discount: {
-      type: Number,
-      default: 0,
-    },
-    coupon: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Coupon",
-    },
-    tax: {
-      type: Number,
-      default: 0,
-    },
-    grandTotal: {
-      type: Number,
-      required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["Pending", "Paid", "Failed", "Refunded"],
-      default: "Pending",
-    },
-    orderStatus: {
-      type: String,
-      enum: ["Pending", "Processing", "Completed", "Cancelled"],
-      default: "Pending",
-    },
-    paymentMethod: {
-      type: String,
-      enum: [
-        "Credit Card",
-        "Debit Card",
-        "UPI",
-        "Net Banking",
-        "Wallet",
-        "Cash",
       ],
-      default: "UPI",
+      subTotal: { type: Number, required: true },
+      tax: { type: Number, default: 0 },
+      grandTotal: { type: Number, required: true },
     },
-    transactionId: {
-      type: String, // from payment gateway
-    },
-    bill: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Bill",
-    },
-    orderDate: {
-      type: Date,
-      default: Date.now,
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
+    status: {
+      type: String,
+      enum: ["CREATED", "PAID", "FAILED", "REFUNDED"],
+      default: "CREATED",
     },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Order", orderSchema);
+module.exports = mongoose.model("Order", orderSchema);

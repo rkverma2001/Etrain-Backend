@@ -15,7 +15,15 @@ const cartSchema = new mongoose.Schema(
           ref: "Course",
           required: true,
         },
-        quantity: { type: Number, default: 1 },
+        packageType: {
+          type: String,
+          enum: ["Bundle", "Exam Voucher", "Practice Test", "Courseware"],
+          required: true,
+        },
+        quantity: { 
+          type: Number, 
+          default: 1 
+        },
         price: { type: Number, required: true },
         total: { type: Number, required: true },
       },

@@ -3,10 +3,15 @@ const router = express.Router();
 const authRouter = require("./authRoutes");
 const courseRouter = require("./courseRoutes");
 const cartRouter = require("./cartRoutes");
+const userRouter = require("./userRoutes");
+const couponRouter = require("./couponRoutes");
+const paymentRouter = require("./paymentRoutes");
 
 router.use("/auth", authRouter);
+router.use("/user", userRouter);
 router.use("/course", courseRouter);
 router.use("/cart", cartRouter);
-
+router.use("/coupon", couponRouter);
+router.use("/payment", paymentRouter);
 
 module.exports = router;

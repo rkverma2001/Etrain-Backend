@@ -47,7 +47,7 @@ const sendOtp = async (req, res) => {
     const params = {
       sender: "ETREDU", // Sender Name
       apikey: process.env.SPRINGEDGE_API_KEY, // Your API Key
-      to: [`+${mobile}`], // Phone number
+      to: [mobile], // Phone number
       message: `Hello Learner! Your OTP for EtrainIndia is ${otp}. This OTP is valid for 5 minutes.`,
       format: "json",
     };

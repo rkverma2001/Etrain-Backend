@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const couponSchema = new mongoose.Schema(
   {
@@ -36,7 +36,7 @@ const couponSchema = new mongoose.Schema(
     },
     usageLimit: {
       type: Number,
-      default: 0, // 0 = unlimited
+      default: 0,
     },
     usedCount: {
       type: Number,
@@ -67,4 +67,4 @@ couponSchema.pre("save", function (next) {
   next();
 });
 
-export default mongoose.model("Coupon", couponSchema);
+module.exports = mongoose.model("Coupon", couponSchema);
