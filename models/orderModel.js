@@ -29,6 +29,14 @@ const orderSchema = new mongoose.Schema(
       tax: { type: Number, default: 0 },
       grandTotal: { type: Number, required: true },
     },
+    bill: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bill",
+    },
+    coupon: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Coupon",
+    },
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
     razorpaySignature: { type: String },

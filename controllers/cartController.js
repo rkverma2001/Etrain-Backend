@@ -3,7 +3,9 @@ const Course = require("../models/courseModel");
 
 const get = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id }).populate("items.course");
+    const cart = await Cart.findOne({ user: req.user.id }).populate(
+      "items.course",
+    );
     res.json(cart || { items: [] });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -11,7 +13,7 @@ const get = async (req, res) => {
 };
 
 const add = async (req, res) => {
-  const { courseCode, packageType, quantity=1 } = req.body;
+  const { courseCode, packageType, quantity = 1 } = req.body;
 
   try {
     if (!req.user || !req.user.id) {
@@ -24,7 +26,9 @@ const add = async (req, res) => {
     }
 
     if (quantity <= 0) {
-      return res.status(400).json({ message: "Quantity must be greater than 0" });
+      return res
+        .status(400)
+        .json({ message: "Quantity must be greater than 0" });
     }
 
     const course = await Course.findOne({ courseCode });
@@ -35,7 +39,9 @@ const add = async (req, res) => {
       return res.status(400).json({ message: "Selected package not found" });
     }
     if (packageData.price === undefined) {
-      return res.status(400).json({ message: "Selected package price missing" });
+      return res
+        .status(400)
+        .json({ message: "Selected package price missing" });
     }
 
     const price = packageData.price;
@@ -46,9 +52,9 @@ const add = async (req, res) => {
     }
 
     const itemIndex = cart.items.findIndex(
-      i =>
+      (i) =>
         i.course.toString() === course._id.toString() &&
-        i.packageType === packageType
+        i.packageType === packageType,
     );
 
     if (itemIndex > -1) {
@@ -60,8 +66,8 @@ const add = async (req, res) => {
         course: course._id,
         packageType,
         quantity,
-        price,  
-        total: price*quantity,
+        price,
+        total: price * quantity,
       });
     }
 
@@ -74,7 +80,9 @@ const add = async (req, res) => {
     });
   } catch (err) {
     console.error("Add to Cart Error:", err);
-    res.status(500).json({ error: err.message || "Failed to add item to cart" });
+    res
+      .status(500)
+      .json({ error: err.message || "Failed to add item to cart" });
   }
 };
 
@@ -82,14 +90,19 @@ const remove = async (req, res) => {
   const { courseId, packageType } = req.body;
 
   try {
-    if (!req.user || !req.user.id) return res.status(401).json({ message: "Unauthorized" });
-    if (!courseId || !packageType) return res.status(400).json({ message: "courseId and packageType are required" });
+    if (!req.user || !req.user.id)
+      return res.status(401).json({ message: "Unauthorized" });
+    if (!courseId || !packageType)
+      return res
+        .status(400)
+        .json({ message: "courseId and packageType are required" });
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     cart.items = cart.items.filter(
-      i => !(i.course.toString() === courseId && i.packageType === packageType)
+      (i) =>
+        !(i.course.toString() === courseId && i.packageType === packageType),
     );
 
     await cart.save();
@@ -106,19 +119,24 @@ const update = async (req, res) => {
   const { courseId, packageType, quantity } = req.body;
 
   try {
-    if (!req.user || !req.user.id) return res.status(401).json({ message: "Unauthorized" });
-    if (!courseId || !packageType || quantity === undefined) 
-      return res.status(400).json({ message: "courseId, packageType, and quantity are required" });
+    if (!req.user || !req.user.id)
+      return res.status(401).json({ message: "Unauthorized" });
+    if (!courseId || !packageType || quantity === undefined)
+      return res
+        .status(400)
+        .json({ message: "courseId, packageType, and quantity are required" });
 
-    if (quantity < 1) return res.status(400).json({ message: "Quantity must be at least 1" });
+    if (quantity < 1)
+      return res.status(400).json({ message: "Quantity must be at least 1" });
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const itemIndex = cart.items.findIndex(
-      i => i.course.toString() === courseId && i.packageType === packageType
+      (i) => i.course.toString() === courseId && i.packageType === packageType,
     );
-    if (itemIndex === -1) return res.status(404).json({ message: "Item not found in cart" });
+    if (itemIndex === -1)
+      return res.status(404).json({ message: "Item not found in cart" });
 
     cart.items[itemIndex].quantity = quantity;
     cart.items[itemIndex].total = quantity * cart.items[itemIndex].price;
@@ -135,7 +153,8 @@ const update = async (req, res) => {
 
 const clear = async (req, res) => {
   try {
-    if (!req.user || !req.user.id) return res.status(401).json({ message: "Unauthorized" });
+    if (!req.user || !req.user.id)
+      return res.status(401).json({ message: "Unauthorized" });
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
@@ -166,7 +185,7 @@ const merge = async (req, res) => {
       if (!course) continue;
 
       const existingItem = cart.items.find(
-        i => i.course.toString() === course._id.toString()
+        (i) => i.course.toString() === course._id.toString(),
       );
 
       if (existingItem) existingItem.quantity += 1;
@@ -181,13 +200,11 @@ const merge = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   get,
   add,
   remove,
   update,
   clear,
-  merge
+  merge,
 };

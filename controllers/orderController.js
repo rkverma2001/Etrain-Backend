@@ -1,9 +1,25 @@
-const Order = require("../models/Order");
-const Cart = require("../models/Cart");
-const Coupon = require("../models/Coupon");
-const Bill = require("../models/Bill");
+const Order = require("../models/orderModel");
+const Cart = require("../models/cartModel");
+const Coupon = require("../models/couponModel");
+const Bill = require("../models/billModel");
+const User = require("../models/userModel");
+const Razorpay = require("razorpay");
 
-create = async (req, res) => {
+// Email service - optional
+let emailService;
+try {
+  emailService = require("../services/emailService");
+} catch (e) {
+  console.warn("Email service not available:", e.message);
+  emailService = null;
+}
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_API_KEY,
+  key_secret: process.env.RAZORPAY_API_SECRET,
+});
+
+const create = async (req, res) => {
   try {
     const userId = req.user.id; // assuming JWT auth middleware
     const { couponCode, paymentMethod } = req.body;
@@ -42,6 +58,15 @@ create = async (req, res) => {
     }
     const tax = Math.round((subtotal - discount) * 0.18);
     const grandTotal = subtotal - discount + tax;
+
+    // Create Razorpay order
+    const razorpayOrder = await razorpay.orders.create({
+      amount: grandTotal * 100, // in paise
+      currency: "INR",
+      receipt: `rcpt_${Date.now()}`,
+      payment_capture: 1,
+    });
+
     const bill = await Bill.create({
       user: userId,
       items: cart.items.map((i) => ({
@@ -56,29 +81,48 @@ create = async (req, res) => {
       grandTotal,
       paymentMethod,
       paymentStatus: "Pending",
+      transactionId: razorpayOrder.id,
     });
 
     const order = await Order.create({
       user: userId,
-      items: cart.items,
+      cart: {
+        items: cart.items,
+        subTotal: subtotal,
+        tax,
+        grandTotal,
+      },
       bill: bill._id,
       coupon: coupon ? coupon._id : null,
-      subtotal,
-      discount,
-      tax,
-      grandTotal,
-      paymentMethod,
-      paymentStatus: "Pending",
-      orderStatus: "Pending",
+      razorpayOrderId: razorpayOrder.id,
+      status: "CREATED",
     });
+
+    // Populate for email
+    const populatedOrder = await Order.findById(order._id)
+      .populate("cart.items.course")
+      .populate("bill");
+
+    const populatedBill = await Bill.findById(bill._id).populate("items.course");
+
+    // Send order confirmation email
+    const user = await User.findById(userId);
+    if (user && user.email && emailService) {
+      try {
+        await emailService.sendOrderConfirmationEmail(user, populatedOrder, populatedBill);
+      } catch (emailError) {
+        console.error("Error sending order confirmation email:", emailError);
+      }
+    }
 
     cart.items = [];
     await cart.save();
 
     res.status(201).json({
       message: "Order created successfully",
-      order,
-      bill,
+      order: populatedOrder,
+      bill: populatedBill,
+      razorpayOrder,
     });
   } catch (error) {
     console.error("Create Order Error:", error);
@@ -90,7 +134,7 @@ const get = async (req, res) => {
   try {
     const userId = req.user.id;
     const orders = await Order.find({ user: userId })
-      .populate("items.course")
+      .populate("cart.items.course")
       .populate("bill")
       .populate("coupon");
     res.json(orders);
@@ -98,6 +142,8 @@ const get = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+module.exports = { create, get };
 
 const getById = async (req, res) => {
   try {

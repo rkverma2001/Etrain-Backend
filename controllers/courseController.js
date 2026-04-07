@@ -34,7 +34,7 @@ const update = async (req, res) => {
     const course = await Course.findOneAndUpdate(
       { courseCode: req.params.code },
       req.body,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
     if (!course) return res.status(404).json({ message: "Course not found" });
     res.status(200).json(course);

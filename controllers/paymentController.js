@@ -1,6 +1,19 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const Payment = require("../models/paymentModel");
+const Order = require("../models/orderModel");
+const Bill = require("../models/billModel");
+const User = require("../models/userModel");
+
+// Email service - optional
+let emailService;
+try {
+  emailService = require("../services/emailService");
+} catch (e) {
+  console.warn("Email service not available:", e.message);
+  emailService = null;
+}
+
 require("dotenv").config();
 
 
@@ -84,10 +97,71 @@ const verifyPayment = async (req, res) => {
       payment.method = meta?.method || payment.method;
       if (meta) payment.meta = { ...payment.meta, ...meta };
       await payment.save();
+
+      // Update order and bill
+      const order = await Order.findOne({ razorpayOrderId: razorpay_order_id })
+        .populate("cart.items.course")
+        .populate("bill");
+      
+      if (order) {
+        order.razorpayPaymentId = razorpay_payment_id;
+        order.razorpaySignature = razorpay_signature;
+        order.status = "PAID";
+        await order.save();
+
+        const bill = await Bill.findById(order.bill).populate("items.course");
+        if (bill) {
+          bill.paymentStatus = "Paid";
+          bill.transactionId = razorpay_payment_id;
+          await bill.save();
+        }
+
+        // Send payment success email with bill
+        const user = await User.findById(order.user);
+        if (user && user.email && emailService) {
+          try {
+            // Send payment success email
+            await emailService.sendPaymentSuccessEmail(user, order, bill, {
+              paymentId: razorpay_payment_id,
+              method: meta?.method || "Online",
+            });
+
+            // Send bill email
+            await emailService.sendBillEmail(user, bill, order);
+          } catch (emailError) {
+            console.error("Error sending emails:", emailError);
+          }
+        }
+      }
+
       return res.json({ ok: true, message: "Payment verified and saved" });
     } else {
       payment.status = "failed";
       await payment.save();
+
+      // Update order and bill to failed
+      const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+      if (order) {
+        order.status = "FAILED";
+        await order.save();
+
+        const bill = await Bill.findById(order.bill);
+        if (bill) {
+          bill.paymentStatus = "Failed";
+          await bill.save();
+        }
+
+        // Send payment failed email
+        const user = await User.findById(order.user);
+        if (user && user.email && emailService) {
+          try {
+            await emailService.sendPaymentFailedEmail(user, order);
+          } catch (emailError) {
+            console.error("Error sending payment failed email:", emailError);
+          }
+        }
+      }
+
       return res.status(400).json({ ok: false, error: "Invalid signature" });
     }
   } catch (err) {
