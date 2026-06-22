@@ -33,7 +33,7 @@ Server runs on: **http://localhost:8080**
 - Request/response formats
 - Status codes
 - Testing guide
-- Complete email flow explain ation
+- Complete email flow explaination
 
 ### 4. **IMPLEMENTATION_SUMMARY.md** - Technical Details
 - What was implemented

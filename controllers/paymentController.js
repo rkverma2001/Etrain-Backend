@@ -1,11 +1,18 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+
 const Payment = require("../models/paymentModel");
 const Order = require("../models/orderModel");
 const Bill = require("../models/billModel");
 const User = require("../models/userModel");
+const Cart = require("../models/cartModel");
+const Coupon = require("../models/couponModel");
+const {
+  CheckoutError,
+  getCartCheckout,
+  createPendingOrder,
+} = require("../services/checkoutService");
 
-// Email service - optional
 let emailService;
 try {
   emailService = require("../services/emailService");
@@ -14,159 +21,219 @@ try {
   emailService = null;
 }
 
-require("dotenv").config();
-
-
-// init razorpay using env vars
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_API_KEY,
   key_secret: process.env.RAZORPAY_API_SECRET,
 });
 
-// POST /api/payment/create-order
 const createOrder = async (req, res) => {
   try {
+    const userId = req.user.id;
     const {
-      amount,
+      couponCode,
       currency = "INR",
-      receipt = undefined,
+      receipt,
       meta = {},
     } = req.body;
 
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: "Invalid amount" });
-    }
+    const checkout = await getCartCheckout({ userId, couponCode });
+    const amountInPaise = Math.round(checkout.grandTotal * 100);
 
-    // Razorpay expects amount in paise (smallest currency unit)
-    const options = {
-      amount: Math.round(amount), // pass paise from frontend or compute here
+    const razorpayOrder = await razorpay.orders.create({
+      amount: amountInPaise,
       currency,
       receipt: receipt || `rcpt_${Date.now()}`,
-      payment_capture: 1, // automatic capture (1) or manual (0)
-    };
-
-    const order = await razorpay.orders.create(options);
-
-    // Save minimal payment record
-    const payment = new Payment({
-      user: req.user?.id || undefined, // if you have auth middleware fill user id
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      status: "created",
-      meta,
+      payment_capture: 1,
     });
 
-    await payment.save();
+    const { order, bill } = await createPendingOrder({
+      userId,
+      checkout,
+      paymentMethod: "Online",
+      razorpayOrderId: razorpayOrder.id,
+    });
 
-    return res.json({ order });
+    const payment = await Payment.create({
+      user: userId,
+      order: order._id,
+      orderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      status: "created",
+      method: "Online",
+      meta: {
+        name: meta.name || "",
+        email: meta.email || "",
+        mobile: meta.mobile || "",
+        state: meta.state || "",
+        city: meta.city || "",
+      },
+    });
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate("cart.items.course")
+      .populate("bill")
+      .populate("coupon");
+
+    return res.status(201).json({
+      success: true,
+      message: "Payment order created successfully",
+      razorpayOrder,
+      order: populatedOrder,
+      bill,
+      payment,
+      totals: {
+        subtotal: checkout.subtotal,
+        discount: checkout.discount,
+        tax: checkout.tax,
+        grandTotal: checkout.grandTotal,
+      },
+    });
   } catch (err) {
-    console.error("createOrder error:", err);
-    return res.status(500).json({ error: "Could not create order" });
+    if (err instanceof CheckoutError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+
+    console.error("Create Payment Order Error:", err);
+    return res.status(500).json({
+      error: err.message || "Could not create payment order",
+    });
   }
 };
 
-// POST /api/payment/verify
 const verifyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, meta } =
-      req.body;
+    console.log("========== VERIFY PAYMENT ==========");
+    console.log("USER:", req.user);
+
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      meta = {},
+    } = req.body;
+
+    console.log("BODY:", req.body);
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({
+        error: "Missing required fields",
+      });
     }
 
-    // Generate signature on server and compare
-    const generated_signature = crypto
+    const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_API_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    const isValid = generated_signature === razorpay_signature;
+    console.log("Generated Signature:", generatedSignature);
+    console.log("Razorpay Signature:", razorpay_signature);
 
-    const payment = await Payment.findOne({ orderId: razorpay_order_id });
+    const payment = await Payment.findOne({
+      orderId: razorpay_order_id,
+      user: req.user.id,
+    });
+
+    console.log("Payment Found:", payment);
 
     if (!payment) {
-      return res.status(404).json({ error: "Payment record not found" });
+      return res.status(404).json({
+        error: "Payment record not found",
+      });
     }
 
-    if (isValid) {
-      payment.paymentId = razorpay_payment_id;
-      payment.signature = razorpay_signature;
-      payment.status = "paid";
-      payment.method = meta?.method || payment.method;
-      if (meta) payment.meta = { ...payment.meta, ...meta };
-      await payment.save();
+    const order = await Order.findOne({
+      razorpayOrderId: razorpay_order_id,
+      user: req.user.id,
+    });
 
-      // Update order and bill
-      const order = await Order.findOne({ razorpayOrderId: razorpay_order_id })
-        .populate("cart.items.course")
-        .populate("bill");
-      
-      if (order) {
-        order.razorpayPaymentId = razorpay_payment_id;
-        order.razorpaySignature = razorpay_signature;
-        order.status = "PAID";
-        await order.save();
+    console.log("Order Found:", order);
 
-        const bill = await Bill.findById(order.bill).populate("items.course");
-        if (bill) {
-          bill.paymentStatus = "Paid";
-          bill.transactionId = razorpay_payment_id;
-          await bill.save();
-        }
+    if (!order) {
+      return res.status(404).json({
+        error: "Order not found",
+      });
+    }
 
-        // Send payment success email with bill
-        const user = await User.findById(order.user);
-        if (user && user.email && emailService) {
-          try {
-            // Send payment success email
-            await emailService.sendPaymentSuccessEmail(user, order, bill, {
-              paymentId: razorpay_payment_id,
-              method: meta?.method || "Online",
-            });
+    const bill = await Bill.findById(order.bill);
 
-            // Send bill email
-            await emailService.sendBillEmail(user, bill, order);
-          } catch (emailError) {
-            console.error("Error sending emails:", emailError);
-          }
-        }
-      }
-
-      return res.json({ ok: true, message: "Payment verified and saved" });
-    } else {
+    if (generatedSignature !== razorpay_signature) {
       payment.status = "failed";
       await payment.save();
 
-      // Update order and bill to failed
-      const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
-      if (order) {
-        order.status = "FAILED";
-        await order.save();
+      order.status = "FAILED";
+      await order.save();
 
-        const bill = await Bill.findById(order.bill);
-        if (bill) {
-          bill.paymentStatus = "Failed";
-          await bill.save();
-        }
-
-        // Send payment failed email
-        const user = await User.findById(order.user);
-        if (user && user.email && emailService) {
-          try {
-            await emailService.sendPaymentFailedEmail(user, order);
-          } catch (emailError) {
-            console.error("Error sending payment failed email:", emailError);
-          }
-        }
+      if (bill) {
+        bill.paymentStatus = "Failed";
+        await bill.save();
       }
 
-      return res.status(400).json({ ok: false, error: "Invalid signature" });
+      return res.status(400).json({
+        success: false,
+        error: "Invalid payment signature",
+      });
     }
+
+    payment.paymentId = razorpay_payment_id;
+    payment.signature = razorpay_signature;
+    payment.status = "paid";
+    payment.method = meta.method || payment.method || "Online";
+    await payment.save();
+
+    order.razorpayPaymentId = razorpay_payment_id;
+    order.razorpaySignature = razorpay_signature;
+    order.status = "PAID";
+    await order.save();
+
+    if (bill) {
+      bill.paymentStatus = "Paid";
+      bill.paymentMethod = meta.method || "Online";
+      bill.transactionId = razorpay_payment_id;
+      await bill.save();
+    }
+
+    if (order.coupon) {
+      await Coupon.findByIdAndUpdate(order.coupon, { $inc: { usedCount: 1 } });
+    }
+
+    await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
+
+    const user = await User.findById(order.user);
+    const customerEmail = user?.email || payment.meta?.email;
+
+    if (customerEmail && emailService) {
+      try {
+        const populatedOrder = await Order.findById(order._id).populate(
+          "cart.items.course",
+        );
+        const populatedBill = bill
+          ? await Bill.findById(bill._id).populate("items.course")
+          : null;
+        const emailUser = {
+          ...(user ? user.toObject() : {}),
+          email: customerEmail,
+        };
+        await emailService.sendPaymentSuccessEmail(emailUser, populatedOrder, populatedBill, {
+          paymentId: razorpay_payment_id,
+          method: meta.method || "Online",
+        });
+        await emailService.sendBillEmail(emailUser, populatedBill, populatedOrder);
+      } catch (emailError) {
+        console.error("Error sending payment emails:", emailError);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment verified successfully",
+      orderId: order._id,
+    });
   } catch (err) {
-    console.error("verifyPayment error:", err);
-    return res.status(500).json({ error: "Verification failed" });
+    console.error("Verify Payment Error:", err);
+    return res.status(500).json({
+      error: err.message || "Verification failed",
+    });
   }
 };
 

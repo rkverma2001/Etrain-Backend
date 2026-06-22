@@ -1,5 +1,11 @@
 const Cart = require("../models/cartModel");
 const Course = require("../models/courseModel");
+const { getCoursePackage } = require("../services/checkoutService");
+
+const parseQuantity = (quantity) => {
+  const value = Number(quantity);
+  return Number.isInteger(value) && value > 0 ? value : null;
+};
 
 const get = async (req, res) => {
   try {
@@ -13,7 +19,8 @@ const get = async (req, res) => {
 };
 
 const add = async (req, res) => {
-  const { courseCode, packageType, quantity = 1 } = req.body;
+  const { courseCode, packageType } = req.body;
+  const quantity = parseQuantity(req.body.quantity ?? 1);
 
   try {
     if (!req.user || !req.user.id) {
@@ -25,26 +32,16 @@ const add = async (req, res) => {
         .json({ message: "courseCode and packageType are required" });
     }
 
-    if (quantity <= 0) {
+    if (!quantity) {
       return res
         .status(400)
-        .json({ message: "Quantity must be greater than 0" });
+        .json({ message: "Quantity must be a positive integer" });
     }
 
     const course = await Course.findOne({ courseCode });
     if (!course) return res.status(404).json({ message: "Course not found" });
 
-    const packageData = course.tabData[packageType];
-    if (!packageData) {
-      return res.status(400).json({ message: "Selected package not found" });
-    }
-    if (packageData.price === undefined) {
-      return res
-        .status(400)
-        .json({ message: "Selected package price missing" });
-    }
-
-    const price = packageData.price;
+    const { price } = getCoursePackage(course, packageType);
 
     let cart = await Cart.findOne({ user: req.user.id });
     if (!cart) {
@@ -116,18 +113,19 @@ const remove = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { courseId, packageType, quantity } = req.body;
+  const { courseId, packageType } = req.body;
+  const quantity = parseQuantity(req.body.quantity);
 
   try {
     if (!req.user || !req.user.id)
       return res.status(401).json({ message: "Unauthorized" });
-    if (!courseId || !packageType || quantity === undefined)
+    if (!courseId || !packageType || req.body.quantity === undefined)
       return res
         .status(400)
         .json({ message: "courseId, packageType, and quantity are required" });
 
-    if (quantity < 1)
-      return res.status(400).json({ message: "Quantity must be at least 1" });
+    if (!quantity)
+      return res.status(400).json({ message: "Quantity must be a positive integer" });
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
@@ -170,33 +168,77 @@ const clear = async (req, res) => {
 };
 
 const merge = async (req, res) => {
-  const { guestCart } = req.body; // array of courseCodes
+  const { guestCart } = req.body;
 
   try {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    let cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) cart = new Cart({ user: req.user.id, items: [] });
+    if (!Array.isArray(guestCart) || guestCart.length === 0) {
+      return res.status(400).json({
+        message: "guestCart must be a non-empty array",
+      });
+    }
 
-    for (let courseCode of guestCart) {
+    let cart = await Cart.findOne({ user: req.user.id });
+    if (!cart) {
+      cart = new Cart({
+        user: req.user.id,
+        items: [],
+      });
+    }
+
+    for (let item of guestCart) {
+      const { courseCode, packageType } = item;
+      const quantity = parseQuantity(item.quantity ?? 1);
+
+      if (!courseCode || !packageType || !quantity) continue;
+
       const course = await Course.findOne({ courseCode });
       if (!course) continue;
 
-      const existingItem = cart.items.find(
-        (i) => i.course.toString() === course._id.toString(),
+      let price;
+      try {
+        price = getCoursePackage(course, packageType).price;
+      } catch (err) {
+        continue;
+      }
+
+      const existingItemIndex = cart.items.findIndex(
+        (i) =>
+          i.course.toString() === course._id.toString() &&
+          i.packageType === packageType,
       );
 
-      if (existingItem) existingItem.quantity += 1;
-      else cart.items.push({ course: course._id });
+      if (existingItemIndex > -1) {
+        cart.items[existingItemIndex].quantity += quantity;
+        cart.items[existingItemIndex].total =
+          cart.items[existingItemIndex].quantity *
+          cart.items[existingItemIndex].price;
+      } else {
+        cart.items.push({
+          course: course._id,
+          packageType,
+          quantity,
+          price,
+          total: quantity * price,
+        });
+      }
     }
 
     await cart.save();
     await cart.populate("items.course");
-    res.json(cart);
+
+    res.status(200).json({
+      message: "Cart merged successfully",
+      cart,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Merge Cart Error:", err);
+    res.status(500).json({
+      error: err.message || "Failed to merge cart",
+    });
   }
 };
 
