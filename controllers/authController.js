@@ -65,61 +65,118 @@ const sendOtp = async (req, res) => {
 };
 
 const verifyOtp = async (req, res) => {
+  console.log("========== VERIFY OTP START ==========");
+  console.log("REQUEST BODY:", req.body);
+
   const { mobile, otp } = req.body;
 
   try {
     if (!mobile || !otp) {
-      return res
-        .status(400)
-        .json({ error: "Phone number and OTP are required" });
+      console.log("ERROR: Mobile or OTP missing");
+
+      return res.status(400).json({
+        error: "Phone number and OTP are required",
+      });
     }
 
-    // Find the OTP record
+    console.log("Searching OTP for mobile:", mobile);
+
     const otpRecord = await Otp.findOne({ mobile });
+
+    console.log("OTP RECORD:", otpRecord);
+
     if (!otpRecord) {
-      return res.status(404).json({ error: "OTP not found. Please request a new one." });
+      console.log("ERROR: OTP Record not found");
+
+      return res.status(404).json({
+        error: "OTP not found. Please request a new one.",
+      });
     }
 
-    // Check if OTP is expired
     const now = dayjs().tz("Asia/Kolkata");
+
+    console.log("CURRENT TIME:", now.toString());
+    console.log("OTP EXPIRY:", otpRecord.expiry);
+
     if (now.isAfter(otpRecord.expiry)) {
+      console.log("ERROR: OTP Expired");
+
       await Otp.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ error: "OTP has expired. Please request a new one." });
+
+      return res.status(400).json({
+        error: "OTP has expired. Please request a new one.",
+      });
     }
 
-    // Compare OTP
-    const isOtpValid = await bcrypt.compare(otp, otpRecord.otp);
+    console.log("Comparing OTP...");
+
+    const isOtpValid = await bcrypt.compare(
+      otp,
+      otpRecord.otp
+    );
+
+    console.log("OTP VALID:", isOtpValid);
+
     if (!isOtpValid) {
-      return res.status(400).json({ error: "Invalid OTP. Please try again." });
+      console.log("ERROR: Invalid OTP");
+
+      return res.status(400).json({
+        error: "Invalid OTP. Please try again.",
+      });
     }
 
-    // Check user existence
+    console.log("Searching user...");
+
     let user = await User.findOne({ mobile });
 
+    console.log("USER FOUND:", user);
+
     if (!user) {
+      console.log("Creating new user...");
+
       user = new User({
         mobile,
       });
+
       await user.save();
+
+      console.log("NEW USER CREATED:", user);
     }
 
-    // Generate JWT
+    console.log("JWT SECRET EXISTS:", !!process.env.JWT_SECRET);
+
     const token = jwt.sign(
-      { id: user._id },
+      {
+        id: user._id,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      {
+        expiresIn: "30d",
+      }
     );
 
-    // Cleanup OTP record after successful verification
-    await Otp.deleteOne({ _id: otpRecord._id });
+    console.log("TOKEN GENERATED");
+
+    await Otp.deleteOne({
+      _id: otpRecord._id,
+    });
+
+    console.log("OTP DELETED");
+    console.log("========== VERIFY OTP SUCCESS ==========");
 
     return res.status(200).json({
       message: "OTP verified successfully",
       token,
     });
   } catch (error) {
-    console.error("Verify OTP Error:", error);
-    return res.status(500).json({ error: "Internal server error." });
+    console.log("========== VERIFY OTP ERROR ==========");
+    console.log(error);
+    console.log(error.message);
+    console.log(error.stack);
+
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 };
 

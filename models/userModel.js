@@ -10,7 +10,6 @@ const userSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      unique: true,
       sparse: true,
       lowercase: true,
       trim: true,
@@ -18,12 +17,15 @@ const userSchema = new mongoose.Schema(
     },
 
     mobile: {
-  type: String,
-  required: true,
-  unique: true,
-  trim: true,
-  match: [/^\+91[6-9]\d{9}$/, "Please enter a valid Indian mobile number with +91"],
-},
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      match: [
+        /^\+91[6-9]\d{9}$/,
+        "Please enter a valid Indian mobile number with +91",
+      ],
+    },
 
     userType: {
       type: String,
