@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
+      default: "",
     },
 
     mobile: {
