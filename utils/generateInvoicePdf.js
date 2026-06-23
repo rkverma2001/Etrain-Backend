@@ -1,0 +1,214 @@
+const PDFDocument = require("pdfkit");
+const axios = require("axios");
+
+const LOGO_URL = "https://etrain.blr1.cdn.digitaloceanspaces.com/logo.webp";
+
+const generateInvoicePdf = async (bill, order, user) => {
+  try {
+    const logoResponse = await axios.get(LOGO_URL, {
+      responseType: "arraybuffer",
+    });
+
+    const logoBuffer = Buffer.from(logoResponse.data);
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({
+        size: "A4",
+        margin: 40,
+      });
+
+      const buffers = [];
+
+      doc.on("data", (chunk) => buffers.push(chunk));
+
+      doc.on("end", () => {
+        resolve(Buffer.concat(buffers));
+      });
+
+      /*
+       * HEADER
+       */
+
+      doc.image(logoBuffer, 40, 20, {
+        width: 150,
+      });
+
+      doc.fillColor("#008641").fontSize(24).text("TAX INVOICE", 0, 40, {
+        align: "right",
+      });
+
+      doc.moveDown(3);
+
+      /*
+       * COMPANY DETAILS
+       */
+
+      doc
+        .fillColor("#000")
+        .fontSize(10)
+        .text("eTrainIndia")
+        .text("Website: www.etrainindia.com")
+        .text("Email: support@etrainindia.com");
+
+      doc.moveDown();
+
+      /*
+       * INVOICE + CUSTOMER SECTION
+       */
+
+      const startY = doc.y;
+
+      doc.fontSize(14).fillColor("#008641").text("Invoice Details", 40, startY);
+
+      doc
+        .fillColor("#000")
+        .fontSize(10)
+        .text(`Invoice ID: ${bill?._id || "N/A"}`)
+        .text(`Order ID: ${order?._id || "N/A"}`)
+        .text(`Transaction ID: ${bill?.transactionId || "N/A"}`)
+        .text(`Payment Status: ${bill?.paymentStatus || "Paid"}`)
+        .text(`Payment Method: ${bill?.paymentMethod || "Online"}`);
+
+      doc
+        .fillColor("#008641")
+        .fontSize(14)
+        .text("Customer Details", 320, startY);
+
+      doc
+        .fillColor("#000")
+        .fontSize(10)
+        .text(`Name: ${user?.name || order?.fullName || "Customer"}`, 320)
+        .text(`Email: ${user?.email || order?.email || ""}`, 320)
+        .text(`Mobile: ${order?.mobileNumber || "-"}`, 320);
+
+      doc.moveDown(3);
+
+      /*
+       * ITEMS TABLE HEADER
+       */
+
+      const tableTop = doc.y + 20;
+
+      doc.rect(40, tableTop, 520, 30).fill("#008641");
+
+      doc.fillColor("#fff");
+
+      doc.text("Course", 50, tableTop + 10);
+
+      doc.text("Qty", 320, tableTop + 10);
+
+      doc.text("Price", 390, tableTop + 10);
+
+      doc.text("Total", 470, tableTop + 10);
+
+      doc.fillColor("#000");
+
+      let y = tableTop + 40;
+
+      /*
+       * ITEMS
+       */
+
+      (bill?.items || []).forEach((item) => {
+        const courseName =
+          item?.course?.courseName ||
+          item?.course?.title ||
+          item?.courseName ||
+          "Course";
+
+        const qty = item?.quantity || 1;
+
+        const price = Number(item?.price || 0);
+
+        const total = Number(item?.total || price);
+
+        doc.text(courseName, 50, y, {
+          width: 240,
+        });
+
+        doc.text(String(qty), 320, y);
+
+        doc.text(`₹${price.toFixed(2)}`, 390, y);
+
+        doc.text(`₹${total.toFixed(2)}`, 470, y);
+
+        y += 28;
+
+        doc.moveTo(40, y).lineTo(560, y).strokeColor("#e5e7eb").stroke();
+
+        y += 10;
+      });
+
+      /*
+       * TOTAL SECTION
+       */
+
+      y += 20;
+
+      const subtotal = Number(bill?.subTotal || bill?.grandTotal || 0);
+
+      const discount = Number(bill?.discountAmount || 0);
+
+      const grandTotal = Number(bill?.grandTotal || subtotal);
+
+      doc.roundedRect(320, y, 220, 100, 8).strokeColor("#d1d5db").stroke();
+
+      doc
+        .fontSize(11)
+        .fillColor("#000")
+        .text("Subtotal", 340, y + 15);
+
+      doc.text(`₹${subtotal.toFixed(2)}`, 470, y + 15);
+
+      doc.text("Discount", 340, y + 40);
+
+      doc.text(`₹${discount.toFixed(2)}`, 470, y + 40);
+
+      doc
+        .fontSize(14)
+        .fillColor("#008641")
+        .text("Grand Total", 340, y + 70);
+
+      doc.text(`₹${grandTotal.toFixed(2)}`, 470, y + 70);
+
+      /*
+       * FOOTER
+       */
+
+      doc
+        .fillColor("#6b7280")
+        .fontSize(10)
+        .text("Thank you for choosing eTrainIndia.", 40, 730, {
+          align: "center",
+          width: 520,
+        });
+
+      doc.text(
+        "This is a computer-generated invoice and does not require a signature.",
+        40,
+        745,
+        {
+          align: "center",
+          width: 520,
+        },
+      );
+
+      doc.text(
+        "Support: support@etrainindia.com | www.etrainindia.com",
+        40,
+        760,
+        {
+          align: "center",
+          width: 520,
+        },
+      );
+
+      doc.end();
+    });
+  } catch (error) {
+    console.error("Invoice PDF Generation Error:", error);
+    throw error;
+  }
+};
+
+module.exports = generateInvoicePdf;

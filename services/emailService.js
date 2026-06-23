@@ -1,5 +1,6 @@
 const sgMail = require("@sendgrid/mail");
 require("dotenv").config();
+const generateInvoicePdf = require("../utils/generateInvoicePdf");
 
 /*
 ====================================================
@@ -66,7 +67,7 @@ const getCustomerEmail = (user, fallbackEmail = "") => {
 /*
 Common SendGrid sender
 */
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, attachments = [] }) => {
   try {
     if (!isConfigured) {
       console.log("📧 Email skipped → SendGrid not configured");
@@ -89,6 +90,7 @@ const sendEmail = async ({ to, subject, html }) => {
       cc: ["support@etrainindia.com"],
       subject,
       html,
+      attachments,
     };
 
     console.log("========== SENDING EMAIL ==========");
@@ -176,36 +178,47 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
         >
 
           <!-- Header -->
-          <tr>
-            <td
-              style="
-                background: linear-gradient(135deg, #0f9d58, #34a853);
-                padding: 35px;
-                text-align: center;
-                color: #ffffff;
-              "
-            >
-              <h1
-                style="
-                  margin: 0;
-                  font-size: 30px;
-                  font-weight: 700;
-                "
-              >
-                Payment Successful ✅
-              </h1>
+          <!-- Header -->
+<tr>
+  <td
+    style="
+      background: linear-gradient(135deg, #0f9d58, #34a853);
+      padding: 35px;
+      text-align: center;
+      color: #ffffff;
+    "
+  >
+    <img
+      src="https://etrain.blr1.cdn.digitaloceanspaces.com/logo.webp"
+      alt="eTrainIndia"
+      style="
+        width: 180px;
+        max-width: 100%;
+        margin-bottom: 20px;
+      "
+    />
 
-              <p
-                style="
-                  margin-top: 10px;
-                  font-size: 15px;
-                  opacity: 0.95;
-                "
-              >
-                Your transaction has been completed successfully
-              </p>
-            </td>
-          </tr>
+    <h1
+      style="
+        margin: 0;
+        font-size: 30px;
+        font-weight: 700;
+      "
+    >
+      Payment Successful ✅
+    </h1>
+
+    <p
+      style="
+        margin-top: 10px;
+        font-size: 15px;
+        opacity: 0.95;
+      "
+    >
+      Your transaction has been completed successfully
+    </p>
+  </td>
+</tr>
 
           <!-- Content -->
           <tr>
@@ -233,7 +246,11 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
                 "
               >
                 Thank you for your payment. We have successfully received your payment
-                and your order has been confirmed.
+and your order has been confirmed.
+
+<br /><br />
+
+Your official invoice PDF is attached with this email.
               </p>
 
               <!-- Payment Info Card -->
@@ -372,11 +389,7 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
                     </h3>
 
                     <p style="margin: 8px 0; color: #4b5563;">
-                      • You'll receive an email within 24 hours from our support team asking for your preferred exam date and time.
-                    </p>
-
-                    <p style="margin: 8px 0; color: #4b5563;">
-                      • You will receive your invoice separately
+                      • You'll receive an email within 24 to 48 hours from our support team regarding your order.
                     </p>
                   </td>
                 </tr>
@@ -431,11 +444,23 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
 </html>
 `;
 
+    const pdfBuffer = await generateInvoicePdf(bill, order, user);
+
     await sendEmail({
       to: customerEmail,
-      cc: ["support@etrainindia.com"],
+
       subject: `Payment Successful - Order #${order?._id}`,
+
       html,
+
+      attachments: [
+        {
+          filename: `Invoice-${order?._id}.pdf`,
+          content: pdfBuffer.toString("base64"),
+          type: "application/pdf",
+          disposition: "attachment",
+        },
+      ],
     });
   } catch (error) {
     console.error("Error in sendPaymentSuccessEmail:", error.message);

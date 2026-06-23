@@ -29,12 +29,7 @@ const razorpay = new Razorpay({
 const createOrder = async (req, res) => {
   try {
     const userId = req.user.id;
-    const {
-      couponCode,
-      currency = "INR",
-      receipt,
-      meta = {},
-    } = req.body;
+    const { couponCode, currency = "INR", receipt, meta = {} } = req.body;
 
     const checkout = await getCartCheckout({ userId, couponCode });
     const amountInPaise = Math.round(checkout.grandTotal * 100);
@@ -214,11 +209,15 @@ const verifyPayment = async (req, res) => {
           ...(user ? user.toObject() : {}),
           email: customerEmail,
         };
-        await emailService.sendPaymentSuccessEmail(emailUser, populatedOrder, populatedBill, {
-          paymentId: razorpay_payment_id,
-          method: meta.method || "Online",
-        });
-        await emailService.sendBillEmail(emailUser, populatedBill, populatedOrder);
+        await emailService.sendPaymentSuccessEmail(
+          emailUser,
+          populatedOrder,
+          populatedBill,
+          {
+            paymentId: razorpay_payment_id,
+            method: meta.method || "Online",
+          },
+        );
       } catch (emailError) {
         console.error("Error sending payment emails:", emailError);
       }
