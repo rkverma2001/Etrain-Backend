@@ -79,6 +79,28 @@ const generateInvoicePdf = async (bill, order, user) => {
       doc
         .fillColor("#000")
         .fontSize(10)
+
+        .text(
+          `Invoice Date: ${
+            bill?.createdAt
+              ? new Date(bill.createdAt).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : new Date().toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+          }`,
+        )
+
+        .moveDown(0.5);
+
+      doc
+        .fillColor("#000")
+        .fontSize(10)
         .text(`Invoice ID: ${bill?._id || "N/A"}`)
         .text(`Order ID: ${order?._id || "N/A"}`)
         .text(`Transaction ID: ${bill?.transactionId || "N/A"}`)
@@ -163,11 +185,13 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       y += 20;
 
-      const priceBeforeDiscount = Number(
-        bill?.subTotal || bill?.grandTotal || 0,
+      const priceBeforeDiscount = Number(bill?.subtotal || bill?.grandTotal || 0);
+
+      const baseAmount = Number(
+        (priceBeforeDiscount + (bill?.discount || 0)).toFixed(2),
       );
 
-      const subtotal = Number((priceBeforeDiscount / 1.18).toFixed(2));
+      const subtotal = Number((baseAmount / 1.18).toFixed(2));
 
       const discount = Number(bill?.discount || 0);
 
