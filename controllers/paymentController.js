@@ -28,11 +28,26 @@ const razorpay = new Razorpay({
 
 const createOrder = async (req, res) => {
   try {
+    console.log("========== CREATE ORDER START ==========");
+    console.log("USER ID:", req.user.id);
+    console.log("REQUEST BODY:", req.body);
+
     const userId = req.user.id;
     const { couponCode, currency = "INR", receipt, meta = {} } = req.body;
 
+    console.log("COUPON CODE RECEIVED:", couponCode);
+
     const checkout = await getCartCheckout({ userId, couponCode });
+
+    console.log("========== CHECKOUT DATA ==========");
+    console.log("Subtotal:", checkout.subtotal);
+    console.log("Discount:", checkout.discount);
+    console.log("Grand Total:", checkout.grandTotal);
+    console.log("Full Checkout:", checkout);
+
     const amountInPaise = Math.round(checkout.grandTotal * 100);
+
+    console.log("AMOUNT IN PAISE:", amountInPaise);
 
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
@@ -41,12 +56,19 @@ const createOrder = async (req, res) => {
       payment_capture: 1,
     });
 
+    console.log("========== RAZORPAY ORDER ==========");
+    console.log(razorpayOrder);
+
     const { order, bill } = await createPendingOrder({
       userId,
       checkout,
       paymentMethod: "Online",
       razorpayOrderId: razorpayOrder.id,
     });
+
+    console.log("========== ORDER CREATED ==========");
+    console.log("Order ID:", order._id);
+    console.log("Bill ID:", bill._id);
 
     const payment = await Payment.create({
       user: userId,
@@ -64,6 +86,9 @@ const createOrder = async (req, res) => {
         city: meta.city || "",
       },
     });
+
+    console.log("========== PAYMENT CREATED ==========");
+    console.log(payment);
 
     const populatedOrder = await Order.findById(order._id)
       .populate("cart.items.course")
@@ -84,11 +109,15 @@ const createOrder = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("========== CREATE PAYMENT ORDER ERROR ==========");
+    console.error(err);
+
     if (err instanceof CheckoutError) {
-      return res.status(err.statusCode).json({ error: err.message });
+      return res.status(err.statusCode).json({
+        error: err.message,
+      });
     }
 
-    console.error("Create Payment Order Error:", err);
     return res.status(500).json({
       error: err.message || "Could not create payment order",
     });

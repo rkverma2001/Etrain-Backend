@@ -138,8 +138,7 @@ const getCartCheckout = async ({ userId, couponCode }) => {
     items,
   });
   const taxableAmount = subtotal - discount;
-  const tax = Math.round(taxableAmount * TAX_RATE);
-  const grandTotal = taxableAmount + tax;
+  const grandTotal = taxableAmount;
 
   return {
     cart,
@@ -147,7 +146,6 @@ const getCartCheckout = async ({ userId, couponCode }) => {
     items,
     subtotal,
     discount,
-    tax,
     grandTotal,
   };
 };
