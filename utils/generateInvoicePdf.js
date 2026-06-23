@@ -1,7 +1,7 @@
 const PDFDocument = require("pdfkit");
 const axios = require("axios");
 
-const LOGO_URL = "https://etrain.blr1.cdn.digitaloceanspaces.com/logo.webp";
+const LOGO_URL = "https://etrain.blr1.cdn.digitaloceanspaces.com/etrainlogo.png";
 
 const generateInvoicePdf = async (bill, order, user) => {
   try {
@@ -39,18 +39,6 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       doc.moveDown(3);
 
-      /*
-       * COMPANY DETAILS
-       */
-
-      doc
-        .fillColor("#000")
-        .fontSize(10)
-        .text("eTrainIndia")
-        .text("Website: www.etrainindia.com")
-        .text("Email: support@etrainindia.com");
-
-      doc.moveDown();
 
       /*
        * INVOICE + CUSTOMER SECTION
@@ -79,7 +67,7 @@ const generateInvoicePdf = async (bill, order, user) => {
         .fontSize(10)
         .text(`Name: ${user?.name || order?.fullName || "Customer"}`, 320)
         .text(`Email: ${user?.email || order?.email || ""}`, 320)
-        .text(`Mobile: ${order?.mobileNumber || "-"}`, 320);
+        .text(`Mobile: ${order?.mobileNumber || user?.mobile || ""}`, 320);
 
       doc.moveDown(3);
 
@@ -95,11 +83,11 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       doc.text("Course", 50, tableTop + 10);
 
-      doc.text("Qty", 320, tableTop + 10);
+      doc.text("Type", 320, tableTop + 10);
 
-      doc.text("Price", 390, tableTop + 10);
+      doc.text("Qty", 390, tableTop + 10);
 
-      doc.text("Total", 470, tableTop + 10);
+      doc.text("Price", 470, tableTop + 10);
 
       doc.fillColor("#000");
 
@@ -115,22 +103,24 @@ const generateInvoicePdf = async (bill, order, user) => {
           item?.course?.title ||
           item?.courseName ||
           "Course";
+          
+          
+        const packageType = item?.packageType || "";
 
         const qty = item?.quantity || 1;
 
         const price = Number(item?.price || 0);
 
-        const total = Number(item?.total || price);
-
         doc.text(courseName, 50, y, {
           width: 240,
         });
 
-        doc.text(String(qty), 320, y);
+        doc.text(packageType, 320, y);
 
-        doc.text(`₹${price.toFixed(2)}`, 390, y);
+        doc.text(String(qty), 390, y);
 
-        doc.text(`₹${total.toFixed(2)}`, 470, y);
+        doc.text(`Rs. ${price.toFixed(2)}`, 470, y);
+
 
         y += 28;
 
@@ -147,7 +137,7 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       const subtotal = Number(bill?.subTotal || bill?.grandTotal || 0);
 
-      const discount = Number(bill?.discountAmount || 0);
+      const discount = Number(bill?.discount || 0);
 
       const grandTotal = Number(bill?.grandTotal || subtotal);
 
@@ -158,18 +148,18 @@ const generateInvoicePdf = async (bill, order, user) => {
         .fillColor("#000")
         .text("Subtotal", 340, y + 15);
 
-      doc.text(`₹${subtotal.toFixed(2)}`, 470, y + 15);
+      doc.text(`Rs. ${subtotal.toFixed(2)}`, 470, y + 15);
 
       doc.text("Discount", 340, y + 40);
 
-      doc.text(`₹${discount.toFixed(2)}`, 470, y + 40);
+      doc.text(`Rs. ${discount.toFixed(2)}`, 470, y + 40);
 
       doc
-        .fontSize(14)
+        .fontSize(12)
         .fillColor("#008641")
         .text("Grand Total", 340, y + 70);
 
-      doc.text(`₹${grandTotal.toFixed(2)}`, 470, y + 70);
+      doc.text(`Rs. ${grandTotal.toFixed(2)}`, 470, y + 70);
 
       /*
        * FOOTER
@@ -178,7 +168,7 @@ const generateInvoicePdf = async (bill, order, user) => {
       doc
         .fillColor("#6b7280")
         .fontSize(10)
-        .text("Thank you for choosing eTrainIndia.", 40, 730, {
+        .text("Thank you for choosing etrainIndia.", 40, 730, {
           align: "center",
           width: 520,
         });
@@ -194,7 +184,7 @@ const generateInvoicePdf = async (bill, order, user) => {
       );
 
       doc.text(
-        "Support: support@etrainindia.com | www.etrainindia.com",
+        "support@etrainindia.com | www.etrainindia.com",
         40,
         760,
         {
