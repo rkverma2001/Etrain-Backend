@@ -380,7 +380,7 @@ Your invoice is attached with this email.
                     </h3>
 
                     <p style="margin: 8px 0; color: #4b5563;">
-                      •This is a digital product. You'll receive an email within 24 to 48 hours from our support team regarding your order.
+                      • This is a digital product. You will receive an email within 24 to 48 hours from our support team regarding your order.
                     </p>
                     <p style="margin: 8px 0; color: #4b5563;">
                       • Kindly contact us on support@etrainindia.com should you have any queries.

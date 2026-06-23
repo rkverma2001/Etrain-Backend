@@ -81,7 +81,7 @@ const generateInvoicePdf = async (bill, order, user) => {
         .fontSize(10)
 
         .text(
-          `Invoice Date: ${
+          `Invoice Date:         ${
             bill?.createdAt
               ? new Date(bill.createdAt).toLocaleDateString("en-GB", {
                   day: "2-digit",
@@ -101,11 +101,11 @@ const generateInvoicePdf = async (bill, order, user) => {
       doc
         .fillColor("#000")
         .fontSize(10)
-        .text(`Invoice ID: ${bill?._id || "N/A"}`)
-        .text(`Order ID: ${order?._id || "N/A"}`)
-        .text(`Transaction ID: ${bill?.transactionId || "N/A"}`)
-        .text(`Payment Status: ${bill?.paymentStatus || "Paid"}`)
-        .text(`Payment Method: ${bill?.paymentMethod || "Online"}`);
+        .text(`Invoice Number:    ${bill?._id || "N/A"}`)
+        .text(`Order Number:      ${order?._id || "N/A"}`)
+        .text(`Transaction ID:      ${bill?.transactionId || "N/A"}`)
+        .text(`Payment Status:    ${bill?.paymentStatus || "Paid"}`)
+        .text(`Payment Method:  ${bill?.paymentMethod || "Online"}`);
 
       doc
         .fillColor("#008641")
