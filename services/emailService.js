@@ -182,10 +182,10 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
 <tr>
   <td
     style="
-      background: linear-gradient(135deg, #0f9d58, #34a853);
+      background: #111827;
       padding: 35px;
       text-align: center;
-      color: #ffffff;
+      color: #d1d5db;
     "
   >
 
@@ -331,7 +331,7 @@ Your invoice is attached with this email.
                       align="left"
                       style="padding: 14px;"
                     >
-                      Course
+                      Item
                     </th>
 
                     <th
@@ -383,7 +383,7 @@ Your invoice is attached with this email.
                       • You'll receive an email within 24 to 48 hours from our support team regarding your order.
                     </p>
                     <p style="margin: 8px 0; color: #4b5563;">
-                      • Kindly contact our support team if you have any query.
+                      • Kindly contact us on support@etrainindia.com. Should you have any queries?
                     </p>
                   </td>
                 </tr>
@@ -425,7 +425,7 @@ Your invoice is attached with this email.
                 font-size: 13px;
               "
             >
-              © 2026 eTrainIndia. All rights reserved.
+              © 2026 etrainIndia. All rights reserved.
             </td>
           </tr>
 

@@ -1,7 +1,8 @@
 const PDFDocument = require("pdfkit");
 const axios = require("axios");
 
-const LOGO_URL = "https://etrain.blr1.cdn.digitaloceanspaces.com/etrainlogo.png";
+const LOGO_URL =
+  "https://etrain.blr1.cdn.digitaloceanspaces.com/etrainlogo.png";
 
 const generateInvoicePdf = async (bill, order, user) => {
   try {
@@ -37,8 +38,35 @@ const generateInvoicePdf = async (bill, order, user) => {
         align: "right",
       });
 
-      doc.moveDown(3);
+      /*
+       * COMPANY LEGAL DETAILS
+       */
 
+      doc
+        .fillColor("#000")
+        .fontSize(11)
+        .font("Helvetica-Bold")
+        .text("Etrain Education Private Limited", 260, 75, {
+          align: "right",
+        });
+
+      doc
+        .font("Helvetica")
+        .fontSize(10)
+        .text("GSTIN – 07AADCE8980H1ZA", {
+          align: "right",
+        })
+        .text("SAC Code – 998319", {
+          align: "right",
+        })
+        .text("1211, 12th Floor Hemkunt Chambers 89,", {
+          align: "right",
+        })
+        .text("Nehru Place, New Delhi – 110019 INDIA", {
+          align: "right",
+        });
+
+      doc.moveDown(4);
 
       /*
        * INVOICE + CUSTOMER SECTION
@@ -67,7 +95,9 @@ const generateInvoicePdf = async (bill, order, user) => {
         .fontSize(10)
         .text(`Name: ${user?.name || order?.fullName || "Customer"}`, 320)
         .text(`Email: ${user?.email || order?.email || ""}`, 320)
-        .text(`Mobile: ${order?.mobileNumber || user?.mobile || ""}`, 320);
+        .text(`Mobile: ${order?.mobileNumber || user?.mobile || ""}`, 320)
+        .text(`City: ${user?.city || user?.city || ""}`, 320)
+        .text(`State: ${user?.state || user?.state || ""}`, 320);
 
       doc.moveDown(3);
 
@@ -81,7 +111,7 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       doc.fillColor("#fff");
 
-      doc.text("Course", 50, tableTop + 10);
+      doc.text("Item", 50, tableTop + 10);
 
       doc.text("Type", 320, tableTop + 10);
 
@@ -103,8 +133,7 @@ const generateInvoicePdf = async (bill, order, user) => {
           item?.course?.title ||
           item?.courseName ||
           "Course";
-          
-          
+
         const packageType = item?.packageType || "";
 
         const qty = item?.quantity || 1;
@@ -121,7 +150,6 @@ const generateInvoicePdf = async (bill, order, user) => {
 
         doc.text(`Rs. ${price.toFixed(2)}`, 470, y);
 
-
         y += 28;
 
         doc.moveTo(40, y).lineTo(560, y).strokeColor("#e5e7eb").stroke();
@@ -135,31 +163,40 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       y += 20;
 
-      const subtotal = Number(bill?.subTotal || bill?.grandTotal || 0);
+      const priceBeforeDiscount = Number(
+        bill?.subTotal || bill?.grandTotal || 0,
+      );
+
+      const subtotal = Number((priceBeforeDiscount / 1.18).toFixed(2));
 
       const discount = Number(bill?.discount || 0);
 
-      const grandTotal = Number(bill?.grandTotal || subtotal);
+      const grandTotal = Number((priceBeforeDiscount - discount).toFixed(2));
 
-      doc.roundedRect(320, y, 220, 100, 8).strokeColor("#d1d5db").stroke();
+      doc.roundedRect(300, y, 240, 150, 8).strokeColor("#d1d5db").stroke();
 
-      doc
-        .fontSize(11)
-        .fillColor("#000")
-        .text("Subtotal", 340, y + 15);
+      doc.fontSize(11).fillColor("#000");
 
+      doc.text("Subtotal", 320, y + 15);
       doc.text(`Rs. ${subtotal.toFixed(2)}`, 470, y + 15);
 
-      doc.text("Discount", 340, y + 40);
+      doc.text("GST (18%)", 320, y + 40);
+      doc.text(
+        `Rs. ${(priceBeforeDiscount - subtotal).toFixed(2)}`,
+        470,
+        y + 40,
+      );
 
-      doc.text(`Rs. ${discount.toFixed(2)}`, 470, y + 40);
+      doc.text("Price Before Discount", 320, y + 65);
+      doc.text(`Rs. ${priceBeforeDiscount.toFixed(2)}`, 470, y + 65);
 
-      doc
-        .fontSize(12)
-        .fillColor("#008641")
-        .text("Grand Total", 340, y + 70);
+      doc.text("Discount", 320, y + 90);
+      doc.text(`Rs. ${discount.toFixed(2)}`, 470, y + 90);
 
-      doc.text(`Rs. ${grandTotal.toFixed(2)}`, 470, y + 70);
+      doc.fontSize(11).font("Helvetica-Bold").fillColor("#008641");
+
+      doc.text("Grand Total", 320, y + 120);
+      doc.text(`Rs. ${grandTotal.toFixed(2)}`, 470, y + 120);
 
       /*
        * FOOTER
@@ -183,15 +220,10 @@ const generateInvoicePdf = async (bill, order, user) => {
         },
       );
 
-      doc.text(
-        "support@etrainindia.com | www.etrainindia.com",
-        40,
-        760,
-        {
-          align: "center",
-          width: 520,
-        },
-      );
+      doc.text("support@etrainindia.com | www.etrainindia.com", 40, 760, {
+        align: "center",
+        width: 520,
+      });
 
       doc.end();
     });
