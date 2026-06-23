@@ -80,7 +80,6 @@ const createOrder = async (req, res) => {
       totals: {
         subtotal: checkout.subtotal,
         discount: checkout.discount,
-        tax: checkout.tax,
         grandTotal: checkout.grandTotal,
       },
     });
