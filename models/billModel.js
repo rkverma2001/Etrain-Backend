@@ -100,6 +100,11 @@ const billSchema = new mongoose.Schema(
       trim: true,
     },
 
+    orderNumber: {
+      type: Number,
+      unique: true,
+    },
+
     billDate: {
       type: Date,
       default: Date.now,

@@ -101,8 +101,8 @@ const generateInvoicePdf = async (bill, order, user) => {
       doc
         .fillColor("#000")
         .fontSize(10)
-        .text(`Invoice Number:    ${bill?._id || "N/A"}`)
-        .text(`Order Number:      ${order?._id || "N/A"}`)
+        .text(`Invoice Number:    ${bill?.invoiceNumber || "N/A"}`)
+        .text(`Order Number:      ${bill?.orderNumber || "N/A"}`)
         .text(`Transaction ID:      ${bill?.transactionId || "N/A"}`)
         .text(`Payment Status:    ${bill?.paymentStatus || "Paid"}`)
         .text(`Payment Method:  ${bill?.paymentMethod || "Online"}`);

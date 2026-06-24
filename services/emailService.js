@@ -87,7 +87,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
     const msg = {
       to,
       from: senderEmail,
-      cc: ["support@etrainindia.com"],
+      cc: ["support@etrainindia.com", "sagar.verma@etrainindia.com"],
       subject,
       html,
       attachments,
@@ -130,7 +130,7 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
           </td>
 
           <td style="padding:10px; border:1px solid #ddd;">
-            ₹${Number(item.total || 0).toFixed(2)}
+            Rs ${Number(item.total || 0).toFixed(2)}
           </td>
         </tr>
       `,
@@ -276,8 +276,8 @@ Your invoice is attached with this email.
                     </p>
 
                     <p style="margin: 10px 0; color: #374151;">
-                      <strong>Order ID:</strong>
-                      ${order?._id || "N/A"}
+                      <strong>Order Number:</strong>
+                      ${bill?.orderNumber || "N/A"}
                     </p>
 
                     <p style="margin: 10px 0; color: #374151;">
@@ -289,7 +289,7 @@ Your invoice is attached with this email.
                           font-weight: bold;
                         "
                       >
-                        ₹${Number(order?.cart?.grandTotal || 0).toFixed(2)}
+                        Rs ${Number(order?.cart?.grandTotal || 0).toFixed(2)}
                       </span>
                     </p>
 
@@ -443,13 +443,13 @@ Your invoice is attached with this email.
     await sendEmail({
       to: customerEmail,
 
-      subject: `Payment Successful - Order #${order?._id}`,
+      subject: `Payment Successful - Order #${bill?.orderNumber}`,
 
       html,
 
       attachments: [
         {
-          filename: `Invoice-${order?._id}.pdf`,
+          filename: `Invoice-${bill?.invoiceNumber}.pdf`,
           content: pdfBuffer.toString("base64"),
           type: "application/pdf",
           disposition: "attachment",

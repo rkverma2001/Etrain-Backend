@@ -156,25 +156,63 @@ const createPendingOrder = async ({
   paymentMethod = "Online",
   razorpayOrderId,
 }) => {
+  // Get latest bill
+  const lastBill = await Bill.findOne()
+    .sort({ createdAt: -1 })
+    .select("orderNumber invoiceNumber");
+
+  // Order Number Logic
+  let nextOrderNumber = 40450;
+
+  if (lastBill?.orderNumber) {
+    nextOrderNumber = Number(lastBill.orderNumber) + 1;
+  }
+
+  // Invoice Number Logic
+  let invoiceSequence = 170;
+
+  if (lastBill?.invoiceNumber) {
+    const match = lastBill.invoiceNumber.match(/^E(\d{4})/);
+
+    if (match) {
+      invoiceSequence = Number(match[1]) + 1;
+    }
+  }
+
+  const now = new Date();
+
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+
+  const invoiceNumber = `E${String(invoiceSequence).padStart(
+    4,
+    "0"
+  )}${month}${year}`;
+
+  // Create Bill
   const bill = await Bill.create({
     user: userId,
     items: checkout.items,
     subtotal: checkout.subtotal,
     discount: checkout.discount,
-    tax: checkout.tax,
+    tax: checkout.tax || 0,
     grandTotal: checkout.grandTotal,
+
+    orderNumber: nextOrderNumber,
+    invoiceNumber,
+
     paymentMethod,
     paymentStatus: "Pending",
     transactionId: razorpayOrderId || "",
-    invoiceNumber: `INV-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
   });
 
+  // Create Order
   const order = await Order.create({
     user: userId,
     cart: {
       items: checkout.items,
       subTotal: checkout.subtotal,
-      tax: checkout.tax,
+      tax: checkout.tax || 0,
       grandTotal: checkout.grandTotal,
     },
     bill: bill._id,
