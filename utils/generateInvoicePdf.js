@@ -185,10 +185,10 @@ const generateInvoicePdf = async (bill, order, user) => {
 
       y += 20;
 
-      const priceBeforeDiscount = Number(bill?.subtotal || bill?.grandTotal || 0);
+      const priceBeforeDiscount = Number(bill?.subtotal || 0);
 
       const baseAmount = Number(
-        (priceBeforeDiscount + (bill?.discount || 0)).toFixed(2),
+        (priceBeforeDiscount ).toFixed(2),
       );
 
       const subtotal = Number((baseAmount / 1.18).toFixed(2));

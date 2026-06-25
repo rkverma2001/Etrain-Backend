@@ -87,7 +87,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
     const msg = {
       to,
       from: senderEmail,
-      cc: ["support@etrainindia.com", "sagar.verma@etrainindia.com"],
+      bcc: ["support@etrainindia.com", "sagar.verma@etrainindia.com", "harsh.chhabra@etrainindia.com"],
       subject,
       html,
       attachments,
