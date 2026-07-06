@@ -87,7 +87,11 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
     const msg = {
       to,
       from: senderEmail,
-      bcc: ["support@etrainindia.com", "sagar.verma@etrainindia.com", "harsh.chhabra@etrainindia.com"],
+      bcc: [
+        "support@etrainindia.com",
+        "sagar.verma@etrainindia.com",
+        "harsh.chhabra@etrainindia.com",
+      ],
       subject,
       html,
       attachments,
@@ -472,6 +476,10 @@ const sendContactEmail = async (contactData) => {
     const { name, email, phone, message } = contactData;
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const currentDate = new Date();
+
+    console.log(currentDate);
+    console.log(currentDate.toLocaleString("en-IN"));
 
     const html = `
     <!DOCTYPE html>
@@ -526,7 +534,7 @@ const sendContactEmail = async (contactData) => {
 
                     <tr>
                       <td><strong>Date</strong></td>
-                      <td>${new Date().toLocaleString("en-IN")}</td>
+                      <td>${currentDate.toLocaleString("en-IN")}</td>
                     </tr>
 
                   </table>
