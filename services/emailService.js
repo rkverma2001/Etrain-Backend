@@ -467,6 +467,118 @@ BILL / INVOICE EMAIL
 ====================================================
 */
 
+const sendContactEmail = async (contactData) => {
+  try {
+    const { name, email, phone, message } = contactData;
+
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+    </head>
+
+    <body style="margin:0;padding:30px;background:#f4f6f9;font-family:Arial,sans-serif;">
+
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+
+            <table width="700" cellpadding="0" cellspacing="0"
+              style="background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 5px 20px rgba(0,0,0,.08);">
+
+              <tr>
+                <td
+                  style="background:#0b8841;color:#ffffff;padding:30px;text-align:center;">
+                  <h1 style="margin:0;">New Contact Form Enquiry</h1>
+                  <p style="margin-top:10px;">
+                    A new enquiry has been received from the website.
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:35px;">
+
+                  <table width="100%" cellpadding="10" cellspacing="0" style="border-collapse:collapse;">
+
+                    <tr>
+                      <td width="180"><strong>Name</strong></td>
+                      <td>${name}</td>
+                    </tr>
+
+                    <tr>
+                      <td><strong>Email</strong></td>
+                      <td>${email}</td>
+                    </tr>
+
+                    <tr>
+                      <td><strong>Phone</strong></td>
+                      <td>${phone}</td>
+                    </tr>
+
+                    <tr>
+                      <td valign="top"><strong>Message</strong></td>
+                      <td>${message}</td>
+                    </tr>
+
+                    <tr>
+                      <td><strong>Date</strong></td>
+                      <td>${new Date().toLocaleString("en-IN")}</td>
+                    </tr>
+
+                  </table>
+
+                  <hr style="margin:30px 0;">
+
+                  <p style="color:#666;">
+                    This enquiry was submitted through the
+                    <strong>etrainIndia Contact Form</strong>.
+                  </p>
+
+                </td>
+              </tr>
+
+              <tr>
+                <td
+                  style="background:#111827;color:#ffffff;text-align:center;padding:20px;">
+                  © ${new Date().getFullYear()} etrainIndia
+                </td>
+              </tr>
+
+            </table>
+
+          </td>
+        </tr>
+      </table>
+
+    </body>
+    </html>
+    `;
+
+    const msg = {
+      to: "support@etrainindia.com",
+      from: process.env.EMAIL_USER, // Verified sender
+      subject: `New Contact Form Enquiry - ${name}`,
+      html,
+    };
+
+    await sgMail.send(msg);
+
+    console.log("✅ Contact enquiry email sent successfully.");
+
+    return true;
+  } catch (error) {
+    console.error("❌ Contact Email Error:");
+    console.error(error.response?.body || error.message);
+
+    return false;
+  }
+};
+
 module.exports = {
   sendPaymentSuccessEmail,
+  sendContactEmail,
 };

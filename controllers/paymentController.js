@@ -264,7 +264,87 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+const resendOrderEmail = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!emailService) {
+      return res.status(500).json({
+        success: false,
+        message: "Email service not available",
+      });
+    }
+
+    const order = await Order.findById(orderId)
+      .populate("user")
+      .populate("cart.items.course")
+      .populate("bill")
+      .populate("coupon");
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.status !== "PAID") {
+      return res.status(400).json({
+        success: false,
+        message: "Email can only be resent for paid orders",
+      });
+    }
+
+    const bill = await Bill.findById(order.bill).populate("items.course");
+
+    const payment = await Payment.findOne({
+      order: order._id,
+      status: "paid",
+    });
+
+    const user = await User.findById(order.user);
+
+    const customerEmail =
+      user?.email || payment?.meta?.email;
+
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Customer email not found",
+      });
+    }
+
+    const emailUser = {
+      ...(user ? user.toObject() : {}),
+      email: customerEmail,
+    };
+
+    await emailService.sendPaymentSuccessEmail(
+      emailUser,
+      order,
+      bill,
+      {
+        paymentId: payment?.paymentId || "",
+        method: payment?.method || "Online",
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Order email sent successfully",
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   verifyPayment,
+  resendOrderEmail
 };

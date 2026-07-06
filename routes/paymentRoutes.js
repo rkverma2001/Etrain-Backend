@@ -5,6 +5,7 @@ const authMiddleware = require("../middlewares/authMiddleware");
 const {
   createOrder,
   verifyPayment,
+  resendOrderEmail
 } = require("../controllers/paymentController");
 
 router.post(
@@ -17,6 +18,11 @@ router.post(
   "/verify",
   authMiddleware,
   verifyPayment
+);
+
+router.post(
+  "/resend-email/:orderId",
+  resendOrderEmail
 );
 
 module.exports = router;

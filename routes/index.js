@@ -8,7 +8,8 @@ const couponRouter = require("./couponRoutes");
 const paymentRouter = require("./paymentRoutes");
 const orderRouter = require("./orderRoutes");
 const dashboardRouter = require("./dashboardRoutes");
-const ibmCourseRouter = require("./ibmCourseRoutes");   
+const ibmCourseRouter = require("./ibmCourseRoutes"); 
+const contactRouter = require("./contactRoutes");  
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
@@ -18,6 +19,6 @@ router.use("/coupon", couponRouter);
 router.use("/payment", paymentRouter);
 router.use("/order", orderRouter);
 router.use("/dashboard", dashboardRouter);
-router.use("/ibm", ibmCourseRouter);
+router.use("/contact", contactRouter);
 
 module.exports = router;

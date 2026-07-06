@@ -7,14 +7,13 @@ const moduleSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     description: {
       type: String,
       required: true,
       trim: true,
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const instructorSchema = new mongoose.Schema(
@@ -24,20 +23,39 @@ const instructorSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     designation: {
       type: String,
       required: true,
       trim: true,
     },
-
     description: {
       type: String,
       required: true,
       trim: true,
     },
   },
-  { _id: false },
+  { _id: false }
+);
+
+const learningPathSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      trim: true,
+    },
+    level: {
+      type: String,
+      trim: true,
+    },
+    courses: {
+      type: Number,
+    },
+    duration: {
+      type: String,
+      trim: true,
+    },
+  },
+  { _id: false }
 );
 
 const ibmCourseSchema = new mongoose.Schema(
@@ -116,6 +134,11 @@ const ibmCourseSchema = new mongoose.Schema(
       trim: true,
     },
 
+    certificateImage: {
+      type: String,
+      trim: true,
+    },
+
     skills: [
       {
         type: String,
@@ -132,6 +155,22 @@ const ibmCourseSchema = new mongoose.Schema(
 
     modules: [moduleSchema],
 
+    requirements: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    learningOutcomes: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    learningPaths: [learningPathSchema],
+
     instructor: {
       type: instructorSchema,
       required: true,
@@ -140,6 +179,17 @@ const ibmCourseSchema = new mongoose.Schema(
     certificateOffered: {
       type: Boolean,
       default: true,
+    },
+
+    certificateTitle: {
+      type: String,
+      trim: true,
+    },
+
+    courseCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
     },
 
     featured: {
@@ -183,7 +233,7 @@ const ibmCourseSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 module.exports = mongoose.model("IBMCourse", ibmCourseSchema);
