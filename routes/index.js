@@ -10,6 +10,7 @@ const orderRouter = require("./orderRoutes");
 const dashboardRouter = require("./dashboardRoutes");
 const ibmCourseRouter = require("./ibmCourseRoutes"); 
 const contactRouter = require("./contactRoutes");  
+const partnerRouter = require("./partnerRoutes");
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
@@ -20,5 +21,6 @@ router.use("/payment", paymentRouter);
 router.use("/order", orderRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/contact", contactRouter);
+router.use("/partner", partnerRouter);
 
 module.exports = router;

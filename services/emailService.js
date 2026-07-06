@@ -592,7 +592,421 @@ const sendContactEmail = async (contactData) => {
   }
 };
 
+const sendPartnerEmail = async (data) => {
+  try {
+    const { name, organisation, email, phone, city, state, message } = data;
+    const formattedDate = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Partnership Enquiry</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f7fb;padding:40px 0;">
+    <tr>
+      <td align="center">
+
+        <table width="720" cellpadding="0" cellspacing="0" border="0"
+          style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.08);">
+
+          <!-- Header -->
+          <tr>
+            <td align="center"
+              style="background:#0b8841;padding:45px 40px;">
+
+              <h1 style="
+                  margin:0;
+                  color:#ffffff;
+                  font-size:32px;
+                  font-weight:700;
+                ">
+                New Partnership Enquiry
+              </h1>
+
+              <p style="
+                  margin:15px 0 0;
+                  color:#e6f6ec;
+                  font-size:16px;
+                  line-height:1.6;
+                ">
+                A new partnership request has been submitted through the
+                etrainIndia website.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Intro -->
+          <tr>
+            <td style="padding:40px 45px 20px;">
+
+              <h2 style="
+                  margin:0;
+                  color:#111827;
+                  font-size:24px;
+                  font-weight:700;
+                ">
+                Partnership Information
+              </h2>
+
+              <p style="
+                  margin:12px 0 0;
+                  color:#6b7280;
+                  line-height:1.8;
+                  font-size:15px;
+                ">
+                Please find below the complete details submitted by the
+                prospective partner.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Details -->
+
+          <tr>
+            <td style="padding:0 45px 30px;">
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+
+                <tr>
+                  <td style="
+                    width:220px;
+                    padding:18px;
+                    background:#f9fafb;
+                    border-bottom:1px solid #e5e7eb;
+                    font-weight:600;
+                    color:#374151;
+                  ">
+                    Full Name
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    border-bottom:1px solid #e5e7eb;
+                    color:#111827;
+                  ">
+                    ${name}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="
+                    padding:18px;
+                    background:#f9fafb;
+                    border-bottom:1px solid #e5e7eb;
+                    font-weight:600;
+                  ">
+                    Organisation
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    border-bottom:1px solid #e5e7eb;
+                  ">
+                    ${organisation}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="
+                    padding:18px;
+                    background:#f9fafb;
+                    border-bottom:1px solid #e5e7eb;
+                    font-weight:600;
+                  ">
+                    Email Address
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    border-bottom:1px solid #e5e7eb;
+                  ">
+                    <a href="mailto:${email}"
+                      style="color:#0b8841;text-decoration:none;">
+                      ${email}
+                    </a>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="
+                    padding:18px;
+                    background:#f9fafb;
+                    border-bottom:1px solid #e5e7eb;
+                    font-weight:600;
+                  ">
+                    Phone Number
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    border-bottom:1px solid #e5e7eb;
+                  ">
+                    <a href="tel:${phone}"
+                      style="color:#111827;text-decoration:none;">
+                      ${phone}
+                    </a>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="
+                    padding:18px;
+                    background:#f9fafb;
+                    border-bottom:1px solid #e5e7eb;
+                    font-weight:600;
+                  ">
+                    City
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    border-bottom:1px solid #e5e7eb;
+                  ">
+                    ${city}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="
+                    padding:18px;
+                    background:#f9fafb;
+                    border-bottom:1px solid #e5e7eb;
+                    font-weight:600;
+                  ">
+                    State
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    border-bottom:1px solid #e5e7eb;
+                  ">
+                    ${state}
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="
+                    padding:18px;
+                    background:#f9fafb;
+                    vertical-align:top;
+                    font-weight:600;
+                  ">
+                    Partnership Requirements
+                  </td>
+
+                  <td style="
+                    padding:18px;
+                    color:#374151;
+                    line-height:1.8;
+                    white-space:pre-line;
+                  ">
+                    ${message}
+                  </td>
+                </tr>
+
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Submission Details -->
+
+          <tr>
+            <td style="padding:0 45px 40px;">
+
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="
+                background:#f9fafb;
+                border:1px solid #e5e7eb;
+                border-radius:12px;
+              ">
+
+                <tr>
+                  <td style="padding:25px;">
+
+                    <h3 style="
+                        margin:0 0 15px;
+                        color:#111827;
+                        font-size:20px;
+                      ">
+                      Submission Details
+                    </h3>
+
+                    <table width="100%">
+
+                      <tr>
+                        <td style="
+                          padding:8px 0;
+                          color:#6b7280;
+                          width:180px;
+                        ">
+                          Submitted On
+                        </td>
+
+                        <td style="
+                          padding:8px 0;
+                          color:#111827;
+                          font-weight:600;
+                        ">
+                          ${formattedDate}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="
+                          padding:8px 0;
+                          color:#6b7280;
+                        ">
+                          Source
+                        </td>
+
+                        <td style="
+                          padding:8px 0;
+                          color:#111827;
+                          font-weight:600;
+                        ">
+                          etrainIndia Partner With Us Page
+                        </td>
+                      </tr>
+
+                    </table>
+
+                  </td>
+                </tr>
+
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Action -->
+
+          <tr>
+            <td style="padding:0 45px 45px;">
+
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="
+                background:#effaf3;
+                border-left:5px solid #0b8841;
+                border-radius:12px;
+              ">
+
+                <tr>
+                  <td style="padding:28px;">
+
+                    <h3 style="
+                        margin:0;
+                        color:#0b8841;
+                        font-size:20px;
+                      ">
+                      Recommended Action
+                    </h3>
+
+                    <p style="
+                        margin:15px 0 0;
+                        color:#4b5563;
+                        line-height:1.9;
+                        font-size:15px;
+                      ">
+                      Please review this enquiry and contact the organisation
+                      within the next 24 hours. Discuss partnership
+                      opportunities, provide relevant documentation, and guide
+                      them through the onboarding process.
+                    </p>
+
+                  </td>
+                </tr>
+
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+
+          <tr>
+            <td align="center"
+              style="
+              background:#111827;
+              padding:35px;
+            ">
+
+              <h2 style="
+                  margin:0;
+                  color:#ffffff;
+                  font-size:22px;
+                ">
+                etrainIndia
+              </h2>
+
+              <p style="
+                  margin:15px 0 0;
+                  color:#d1d5db;
+                  font-size:14px;
+                  line-height:1.8;
+                ">
+                This email was automatically generated from the
+                <strong>Partner With Us</strong> form submitted on the
+                etrainIndia website.
+              </p>
+
+              <p style="
+                  margin-top:18px;
+                  color:#9ca3af;
+                  font-size:13px;
+                ">
+                © ${new Date().getFullYear()} etrainIndia. All Rights Reserved.
+              </p>
+
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+
+</html>
+`;
+
+    await sgMail.send({
+      to: "support@etrainindia.com",
+      from: process.env.EMAIL_USER,
+      subject: `New Partnership Request - ${organisation}`,
+      html,
+    });
+
+    return true;
+  } catch (error) {
+    console.error(error.response?.body || error.message);
+    return false;
+  }
+};
+
 module.exports = {
   sendPaymentSuccessEmail,
   sendContactEmail,
+  sendPartnerEmail,
 };
