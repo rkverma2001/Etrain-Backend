@@ -476,10 +476,16 @@ const sendContactEmail = async (contactData) => {
     const { name, email, phone, message } = contactData;
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    const currentDate = new Date();
-
-    console.log(currentDate);
-    console.log(currentDate.toLocaleString("en-IN"));
+    const formattedDate = new Date().toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
 
     const html = `
     <!DOCTYPE html>
@@ -534,7 +540,7 @@ const sendContactEmail = async (contactData) => {
 
                     <tr>
                       <td><strong>Date</strong></td>
-                      <td>${currentDate.toLocaleString("en-IN")}</td>
+                      <td>${formattedDate}</td>
                     </tr>
 
                   </table>
