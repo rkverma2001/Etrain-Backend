@@ -91,6 +91,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
         "support@etrainindia.com",
         "sagar.verma@etrainindia.com",
         "harsh.chhabra@etrainindia.com",
+        "rahul.bedi@etrainindia.com"
       ],
       subject,
       html,
