@@ -993,7 +993,7 @@ const sendPartnerEmail = async (data) => {
 `;
 
     await sgMail.send({
-      to: "support@etrainindia.com",
+      to: "gaurav.kapoor@etrainindia.com",
       from: process.env.EMAIL_USER,
       subject: `New Partnership Request - ${organisation}`,
       html,
