@@ -574,7 +574,7 @@ const sendContactEmail = async (contactData) => {
     `;
 
     const msg = {
-      to: "support@etrainindia.com",
+      to: "gaurav.kapoor@etrainindia.com",
       from: process.env.EMAIL_USER, // Verified sender
       subject: `New Contact Form Enquiry - ${name}`,
       html,
