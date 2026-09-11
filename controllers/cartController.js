@@ -19,56 +19,125 @@ const get = async (req, res) => {
 };
 
 const add = async (req, res) => {
-  const { courseCode, packageType } = req.body;
+  const { courseCode, packageType, version } = req.body;
+
   const quantity = parseQuantity(req.body.quantity ?? 1);
 
   try {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
     }
+
     if (!courseCode || !packageType) {
-      return res
-        .status(400)
-        .json({ message: "courseCode and packageType are required" });
+      return res.status(400).json({
+        message: "courseCode and packageType are required",
+      });
     }
 
     if (!quantity) {
-      return res
-        .status(400)
-        .json({ message: "Quantity must be a positive integer" });
+      return res.status(400).json({
+        message: "Quantity must be a positive integer",
+      });
     }
 
     const course = await Course.findOne({ courseCode });
-    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found",
+      });
+    }
+
+    // Get selected package
+    const packageData = course.tabData?.[packageType];
+
+    if (!packageData) {
+      return res.status(400).json({
+        message: `Package type "${packageType}" is not available for this course`,
+      });
+    }
+
+    // Check whether this package has versions
+    const availableVersions = packageData.versions || [];
+
+    let selectedVersion = null;
+
+    if (availableVersions.length > 0) {
+      // Version is available for this package
+      if (!version) {
+        return res.status(400).json({
+          message: "Version is required for this package",
+          availableVersions,
+        });
+      }
+
+      // Check selected version is valid
+      if (!availableVersions.includes(version)) {
+        return res.status(400).json({
+          message: "Invalid version selected",
+          availableVersions,
+        });
+      }
+
+      selectedVersion = version;
+    } else {
+      // Package does not have versions
+      selectedVersion = null;
+    }
 
     const { price } = getCoursePackage(course, packageType);
 
-    let cart = await Cart.findOne({ user: req.user.id });
+    let cart = await Cart.findOne({
+      user: req.user.id,
+    });
+
     if (!cart) {
-      cart = new Cart({ user: req.user.id, items: [] });
+      cart = new Cart({
+        user: req.user.id,
+        items: [],
+      });
     }
 
+    /*
+     * Course + package + version together identify
+     * a unique cart item.
+     */
     const itemIndex = cart.items.findIndex(
       (i) =>
         i.course.toString() === course._id.toString() &&
-        i.packageType === packageType,
+        i.packageType === packageType &&
+        (i.version || null) === selectedVersion
     );
 
     if (itemIndex > -1) {
+      // Existing same course + package + version
       cart.items[itemIndex].quantity += quantity;
+
       cart.items[itemIndex].total =
-        cart.items[itemIndex].quantity * cart.items[itemIndex].price;
+        cart.items[itemIndex].quantity *
+        cart.items[itemIndex].price;
     } else {
-      cart.items.push({
+      // New cart item
+      const newItem = {
         course: course._id,
         packageType,
         quantity,
         price,
         total: price * quantity,
-      });
+      };
+
+      // Only save version when version exists
+      if (selectedVersion) {
+        newItem.version = selectedVersion;
+      }
+
+      cart.items.push(newItem);
     }
 
     await cart.save();
+
     await cart.populate("items.course");
 
     res.status(200).json({
@@ -77,9 +146,10 @@ const add = async (req, res) => {
     });
   } catch (err) {
     console.error("Add to Cart Error:", err);
-    res
-      .status(500)
-      .json({ error: err.message || "Failed to add item to cart" });
+
+    res.status(500).json({
+      error: err.message || "Failed to add item to cart",
+    });
   }
 };
 

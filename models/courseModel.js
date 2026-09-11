@@ -1,22 +1,11 @@
 const mongoose = require("mongoose");
 
-const versionSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-  },
-  { _id: false }
-);
-
 const tabDataSchema = new mongoose.Schema({
   title: { type: String, required: true },
   subtitle: { type: String },
   image: { type: String },
   price: { type: Number },
-  versions: [versionSchema],
+  versions: [{ type: String }],
 });
 
 const curriculumSchema = new mongoose.Schema({

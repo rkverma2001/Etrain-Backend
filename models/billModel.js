@@ -22,6 +22,12 @@ const billSchema = new mongoose.Schema(
           required: true,
         },
 
+        version: {
+            type: String,
+            trim: true,
+            default: null,
+          },
+
         quantity: {
           type: Number,
           required: true,
