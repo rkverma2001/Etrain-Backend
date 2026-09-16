@@ -82,7 +82,7 @@ const validateCoupon = async ({ couponCode, subtotal, items }) => {
     throw new CheckoutError("Coupon usage limit reached");
   }
 
-  if (subtotal !== coupon.minPurchaseAmount) {
+  if (subtotal < coupon.minPurchaseAmount) {
     throw new CheckoutError(
       `Coupon valid only for minimum purchase of Rs ${coupon.minPurchaseAmount}`,
     );
