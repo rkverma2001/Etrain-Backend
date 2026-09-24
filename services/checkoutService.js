@@ -125,6 +125,9 @@ const getCartCheckout = async ({ userId, couponCode }) => {
     return {
       course: item.course._id,
       packageType: item.packageType,
+
+      // Version is optional
+      version: item.version || null,
       quantity,
       price,
       total: price * quantity,
@@ -186,7 +189,7 @@ const createPendingOrder = async ({
 
   const invoiceNumber = `E${String(invoiceSequence).padStart(
     4,
-    "0"
+    "0",
   )}${month}${year}`;
 
   // Create Bill
@@ -194,6 +197,10 @@ const createPendingOrder = async ({
     user: userId,
     items: checkout.items,
     subtotal: checkout.subtotal,
+
+    // Save coupon code only if coupon exists
+    couponCode: checkout.coupon?.code || null,
+
     discount: checkout.discount,
     tax: checkout.tax || 0,
     grandTotal: checkout.grandTotal,

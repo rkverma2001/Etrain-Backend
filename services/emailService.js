@@ -91,7 +91,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
         "support@etrainindia.com",
         "sagar.verma@etrainindia.com",
         "harsh.chhabra@etrainindia.com",
-        "rahul.bedi@etrainindia.com"
+        "rahul.bedi@etrainindia.com",
       ],
       subject,
       html,
@@ -143,11 +143,17 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
       .join("");
 
     const html = `
+
 <!DOCTYPE html>
+
 <html>
+
 <head>
+
   <meta charset="UTF-8" />
+
   <title>Payment Successful</title>
+
 </head>
 
 <body
@@ -158,6 +164,7 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
     font-family: Arial, sans-serif;
   "
 >
+
   <table
     width="100%"
     cellpadding="0"
@@ -165,10 +172,13 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
     border="0"
     style="background-color: #f4f7fb; padding: 30px 0;"
   >
+
     <tr>
+
       <td align="center">
 
         <!-- Main Container -->
+
         <table
           width="700"
           cellpadding="0"
@@ -183,41 +193,47 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
         >
 
           <!-- Header -->
-          <!-- Header -->
-<tr>
-  <td
-    style="
-      background: #111827;
-      padding: 35px;
-      text-align: center;
-      color: #d1d5db;
-    "
-  >
 
-    <h1
-      style="
-        margin: 0;
-        font-size: 30px;
-        font-weight: 700;
-      "
-    >
-      Payment Successful ✅
-    </h1>
+          <tr>
 
-    <p
-      style="
-        margin-top: 10px;
-        font-size: 15px;
-        opacity: 0.95;
-      "
-    >
-      Your transaction has been completed successfully
-    </p>
-  </td>
-</tr>
+            <td
+              style="
+                background: #111827;
+                padding: 35px;
+                text-align: center;
+                color: #d1d5db;
+              "
+            >
+
+              <h1
+                style="
+                  margin: 0;
+                  font-size: 30px;
+                  font-weight: 700;
+                "
+              >
+                Payment Successful ✅
+              </h1>
+
+              <p
+                style="
+                  margin-top: 10px;
+                  font-size: 15px;
+                  opacity: 0.95;
+                "
+              >
+                Your transaction has been completed successfully
+              </p>
+
+            </td>
+
+          </tr>
+
 
           <!-- Content -->
+
           <tr>
+
             <td style="padding: 40px;">
 
               <p
@@ -227,11 +243,15 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
                   margin-bottom: 15px;
                 "
               >
+
                 Dear
+
                 <strong>
                   ${user?.name || "Customer"}
                 </strong>,
+
               </p>
+
 
               <p
                 style="
@@ -241,15 +261,20 @@ const sendPaymentSuccessEmail = async (user, order, bill, paymentDetails) => {
                   margin-bottom: 30px;
                 "
               >
+
                 Thank you for your payment. We have successfully received your payment
-and your order has been confirmed.
+                and your order has been confirmed.
 
-<br /><br />
+                <br />
+                <br />
 
-Your invoice is attached with this email.
+                Your invoice is attached with this email.
+
               </p>
 
+
               <!-- Payment Info Card -->
+
               <table
                 width="100%"
                 cellpadding="0"
@@ -262,7 +287,9 @@ Your invoice is attached with this email.
                   margin-bottom: 30px;
                 "
               >
+
                 <tr>
+
                   <td style="padding: 25px;">
 
                     <h3
@@ -275,18 +302,44 @@ Your invoice is attached with this email.
                       Payment Details
                     </h3>
 
-                    <p style="margin: 10px 0; color: #374151;">
+
+                    <p
+                      style="
+                        margin: 10px 0;
+                        color: #374151;
+                      "
+                    >
+
                       <strong>Payment ID:</strong>
+
                       ${paymentDetails?.paymentId || "N/A"}
+
                     </p>
 
-                    <p style="margin: 10px 0; color: #374151;">
+
+                    <p
+                      style="
+                        margin: 10px 0;
+                        color: #374151;
+                      "
+                    >
+
                       <strong>Order Number:</strong>
+
                       ${bill?.orderNumber || "N/A"}
+
                     </p>
 
-                    <p style="margin: 10px 0; color: #374151;">
+
+                    <p
+                      style="
+                        margin: 10px 0;
+                        color: #374151;
+                      "
+                    >
+
                       <strong>Total Paid:</strong>
+
                       <span
                         style="
                           color: #0f9d58;
@@ -296,13 +349,18 @@ Your invoice is attached with this email.
                       >
                         Rs ${Number(order?.cart?.grandTotal || 0).toFixed(2)}
                       </span>
+
                     </p>
 
                   </td>
+
                 </tr>
+
               </table>
 
+
               <!-- Purchased Items -->
+
               <h3
                 style="
                   margin-bottom: 20px;
@@ -312,6 +370,7 @@ Your invoice is attached with this email.
               >
                 Purchased Items
               </h3>
+
 
               <table
                 width="100%"
@@ -325,19 +384,23 @@ Your invoice is attached with this email.
                   overflow: hidden;
                 "
               >
+
                 <thead>
+
                   <tr
                     style="
                       background: #111827;
                       color: #ffffff;
                     "
                   >
+
                     <th
                       align="left"
                       style="padding: 14px;"
                     >
                       Item
                     </th>
+
 
                     <th
                       align="left"
@@ -346,21 +409,138 @@ Your invoice is attached with this email.
                       Package
                     </th>
 
+
                     <th
                       align="right"
                       style="padding: 14px;"
                     >
                       Amount
                     </th>
+
                   </tr>
+
                 </thead>
 
+
                 <tbody>
-                  ${itemsHtml}
+
+                  ${(order?.cart?.items || [])
+                    .map((item) => {
+                      const courseName =
+                        item?.course?.courseName ||
+                        item?.course?.title ||
+                        item?.courseName ||
+                        "Course";
+
+                      const packageType = item?.packageType || "N/A";
+
+                      const quantity = Number(item?.quantity || 1);
+
+                      const version =
+                        typeof item?.version === "string"
+                          ? item.version.trim()
+                          : "";
+
+                      const price = Number(item?.price || 0);
+
+                      const total = Number(item?.total ?? price * quantity);
+
+                      return `
+
+                          <tr>
+
+                            <!-- Item -->
+
+                            <td
+                              style="
+                                padding: 14px;
+                                border-bottom: 1px solid #e5e7eb;
+                                color: #374151;
+                                vertical-align: top;
+                              "
+                            >
+
+                              <strong>
+                                ${courseName}
+                              </strong>
+
+                              ${
+                                version
+                                  ? `
+                                    <br />
+
+                                    <span
+                                      style="
+                                        font-size: 12px;
+                                        color: #6b7280;
+                                      "
+                                    >
+                                      Version: ${version}
+                                    </span>
+                                  `
+                                  : ""
+                              }
+
+                            </td>
+
+
+                            <!-- Package + Quantity -->
+
+                            <td
+                              style="
+                                padding: 14px;
+                                border-bottom: 1px solid #e5e7eb;
+                                color: #374151;
+                                vertical-align: top;
+                              "
+                            >
+
+                              ${packageType}
+
+                              <br />
+
+                              <span
+                                style="
+                                  font-size: 12px;
+                                  color: #6b7280;
+                                "
+                              >
+                                Qty: ${quantity}
+                              </span>
+
+                            </td>
+
+
+                            <!-- Amount -->
+
+                            <td
+                              align="right"
+                              style="
+                                padding: 14px;
+                                border-bottom: 1px solid #e5e7eb;
+                                color: #374151;
+                                vertical-align: top;
+                                white-space: nowrap;
+                              "
+                            >
+
+                              Rs ${total.toFixed(2)}
+
+                            </td>
+
+                          </tr>
+
+                        `;
+                    })
+                    .join("")}
+
                 </tbody>
+
               </table>
 
+
               <!-- Next Steps -->
+
               <table
                 width="100%"
                 cellpadding="0"
@@ -373,8 +553,11 @@ Your invoice is attached with this email.
                   border-radius: 8px;
                 "
               >
+
                 <tr>
+
                   <td style="padding: 25px;">
+
                     <h3
                       style="
                         margin: 0 0 15px 0;
@@ -384,17 +567,35 @@ Your invoice is attached with this email.
                       What Happens Next?
                     </h3>
 
-                    <p style="margin: 8px 0; color: #4b5563;">
+
+                    <p
+                      style="
+                        margin: 8px 0;
+                        color: #4b5563;
+                      "
+                    >
                       • This is a digital product. You will receive an email within 24 to 48 hours from our support team regarding your order.
                     </p>
-                    <p style="margin: 8px 0; color: #4b5563;">
+
+
+                    <p
+                      style="
+                        margin: 8px 0;
+                        color: #4b5563;
+                      "
+                    >
                       • Kindly contact us on support@etrainindia.com should you have any queries.
                     </p>
+
                   </td>
+
                 </tr>
+
               </table>
 
+
               <!-- Footer -->
+
               <p
                 style="
                   margin-top: 40px;
@@ -402,9 +603,13 @@ Your invoice is attached with this email.
                   color: #555;
                 "
               >
+
                 Thank you for choosing
+
                 <strong>etrainIndia</strong>.
+
               </p>
+
 
               <p
                 style="
@@ -412,15 +617,22 @@ Your invoice is attached with this email.
                   color: #6b7280;
                 "
               >
+
                 Need help? Contact us at
+
                 <strong>${senderEmail}</strong>
+
               </p>
 
             </td>
+
           </tr>
 
+
           <!-- Bottom Footer -->
+
           <tr>
+
             <td
               style="
                 background: #111827;
@@ -430,17 +642,26 @@ Your invoice is attached with this email.
                 font-size: 13px;
               "
             >
+
               © 2026 etrainIndia. All rights reserved.
+
             </td>
+
           </tr>
+
 
         </table>
 
       </td>
+
     </tr>
+
   </table>
+
 </body>
+
 </html>
+
 `;
 
     const pdfBuffer = await generateInvoicePdf(bill, order, user);

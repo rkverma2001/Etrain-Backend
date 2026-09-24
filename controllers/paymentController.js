@@ -46,7 +46,7 @@ const createOrder = async (req, res) => {
     console.log("Full Checkout:", checkout);
 
     const amountInPaise = Math.round(checkout.grandTotal * 100);
-
+    2;
     console.log("AMOUNT IN PAISE:", amountInPaise);
 
     const razorpayOrder = await razorpay.orders.create({
@@ -304,8 +304,7 @@ const resendOrderEmail = async (req, res) => {
 
     const user = await User.findById(order.user);
 
-    const customerEmail =
-      user?.email || payment?.meta?.email;
+    const customerEmail = user?.email || payment?.meta?.email;
 
     if (!customerEmail) {
       return res.status(400).json({
@@ -319,15 +318,10 @@ const resendOrderEmail = async (req, res) => {
       email: customerEmail,
     };
 
-    await emailService.sendPaymentSuccessEmail(
-      emailUser,
-      order,
-      bill,
-      {
-        paymentId: payment?.paymentId || "",
-        method: payment?.method || "Online",
-      }
-    );
+    await emailService.sendPaymentSuccessEmail(emailUser, order, bill, {
+      paymentId: payment?.paymentId || "",
+      method: payment?.method || "Online",
+    });
 
     return res.status(200).json({
       success: true,
@@ -346,5 +340,5 @@ const resendOrderEmail = async (req, res) => {
 module.exports = {
   createOrder,
   verifyPayment,
-  resendOrderEmail
+  resendOrderEmail,
 };

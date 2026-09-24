@@ -26,128 +26,198 @@ const generateInvoicePdf = async (bill, order, user) => {
         resolve(Buffer.concat(buffers));
       });
 
-      /*
-       * HEADER
-       */
+      doc.on("error", reject);
+
+      // =========================================================
+      // HEADER
+      // =========================================================
 
       doc.image(logoBuffer, 40, 20, {
         width: 150,
       });
 
-      doc.fillColor("#008641").fontSize(24).text("TAX INVOICE", 0, 40, {
-        align: "right",
-      });
+      doc
+        .fillColor("#008641")
+        .font("Helvetica-Bold")
+        .fontSize(24)
+        .text("TAX INVOICE", 40, 40, {
+          width: 520,
+          align: "right",
+        });
 
-      /*
-       * COMPANY LEGAL DETAILS
-       */
+      // =========================================================
+      // COMPANY LEGAL DETAILS
+      // =========================================================
 
       doc
-        .fillColor("#000")
-        .fontSize(11)
+        .fillColor("#000000")
         .font("Helvetica-Bold")
-        .text("Etrain Education Private Limited", 260, 75, {
+        .fontSize(11)
+        .text("Etrain Education Private Limited", 300, 75, {
+          width: 260,
           align: "right",
         });
 
       doc
         .font("Helvetica")
         .fontSize(10)
-        .text("GSTIN – 07AADCE8980H1ZA", {
+        .text("GSTIN – 07AADCE8980H1ZA", 300, 91, {
+          width: 260,
           align: "right",
         })
-        .text("SAC Code – 998319", {
+        .text("SAC Code – 998319", 300, 106, {
+          width: 260,
           align: "right",
         })
-        .text("1211, 12th Floor Hemkunt Chambers 89,", {
+        .text("1211, 12th Floor Hemkunt Chambers 89,", 300, 121, {
+          width: 260,
           align: "right",
         })
-        .text("Nehru Place, New Delhi – 110019 INDIA", {
+        .text("Nehru Place, New Delhi – 110019 INDIA", 300, 136, {
+          width: 260,
           align: "right",
         });
 
-      doc.moveDown(4);
+      // =========================================================
+      // INVOICE + CUSTOMER DETAILS
+      // =========================================================
 
-      /*
-       * INVOICE + CUSTOMER SECTION
-       */
+      const sectionTop = 180;
 
-      const startY = doc.y;
-
-      doc.fontSize(14).fillColor("#008641").text("Invoice Details", 40, startY);
-
-      doc
-        .fillColor("#000")
-        .fontSize(10)
-
-        .text(
-          `Invoice Date:         ${
-            bill?.createdAt
-              ? new Date(bill.createdAt).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-              : new Date().toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-          }`,
-        )
-
-        .moveDown(0.5);
-
-      doc
-        .fillColor("#000")
-        .fontSize(10)
-        .text(`Invoice Number:    ${bill?.invoiceNumber || "N/A"}`)
-        .text(`Order Number:      ${bill?.orderNumber || "N/A"}`)
-        .text(`Transaction ID:      ${bill?.transactionId || "N/A"}`)
-        .text(`Payment Status:    ${bill?.paymentStatus || "Paid"}`)
-        .text(`Payment Method:  ${bill?.paymentMethod || "Online"}`);
+      // ---------------- INVOICE DETAILS ----------------
 
       doc
         .fillColor("#008641")
+        .font("Helvetica-Bold")
         .fontSize(14)
-        .text("Customer Details", 320, startY);
+        .text("Invoice Details", 40, sectionTop);
+
+      const invoiceDate = bill?.createdAt
+        ? new Date(bill.createdAt).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+
+      const invoiceRows = [
+        ["Invoice Date", invoiceDate],
+        ["Invoice Number", bill?.invoiceNumber || "N/A"],
+        ["Order Number", bill?.orderNumber || "N/A"],
+        ["Transaction ID", bill?.transactionId || "N/A"],
+        ["Payment Status", bill?.paymentStatus || "Paid"],
+        ["Payment Method", bill?.paymentMethod || "Online"],
+      ];
+
+      let invoiceY = sectionTop + 25;
+
+      invoiceRows.forEach(([label, value]) => {
+        doc
+          .font("Helvetica")
+          .fontSize(10)
+          .fillColor("#000000")
+          .text(`${label}:`, 40, invoiceY, {
+            width: 105,
+          });
+
+        doc.text(String(value), 145, invoiceY, {
+          width: 150,
+        });
+
+        invoiceY += 16;
+      });
+
+      // ---------------- CUSTOMER DETAILS ----------------
 
       doc
-        .fillColor("#000")
-        .fontSize(10)
-        .text(`Name: ${user?.name || order?.fullName || "Customer"}`, 320)
-        .text(`Email: ${user?.email || order?.email || ""}`, 320)
-        .text(`Mobile: ${order?.mobileNumber || user?.mobile || ""}`, 320)
-        .text(`City: ${user?.city || user?.city || ""}`, 320)
-        .text(`State: ${user?.state || user?.state || ""}`, 320);
+        .fillColor("#008641")
+        .font("Helvetica-Bold")
+        .fontSize(14)
+        .text("Customer Details", 320, sectionTop);
 
-      doc.moveDown(3);
+      const customerRows = [
+        ["Name", user?.name || order?.fullName || "Customer"],
+        ["Email", user?.email || order?.email || ""],
+        ["Mobile", order?.mobileNumber || user?.mobile || ""],
+        ["City", user?.city || ""],
+        ["State", user?.state || ""],
+      ];
 
-      /*
-       * ITEMS TABLE HEADER
-       */
+      let customerY = sectionTop + 25;
 
-      const tableTop = doc.y + 20;
+      customerRows.forEach(([label, value]) => {
+        doc
+          .font("Helvetica")
+          .fontSize(10)
+          .fillColor("#000000")
+          .text(`${label}:`, 320, customerY, {
+            width: 55,
+          });
 
-      doc.rect(40, tableTop, 520, 30).fill("#008641");
+        doc.text(String(value), 375, customerY, {
+          width: 185,
+        });
 
-      doc.fillColor("#fff");
+        customerY += 16;
+      });
 
-      doc.text("Item", 50, tableTop + 10);
+      // =========================================================
+      // ITEMS TABLE
+      // =========================================================
 
-      doc.text("Type", 320, tableTop + 10);
+      const tableTop = Math.max(invoiceY, customerY) + 25;
 
-      doc.text("Qty", 390, tableTop + 10);
+      // Table dimensions
+      const tableX = 40;
+      const tableWidth = 520;
+      const headerHeight = 30;
 
-      doc.text("Price", 470, tableTop + 10);
+      // Column positions
+      const itemX = 50;
+      const itemWidth = 250;
 
-      doc.fillColor("#000");
+      const typeX = 305;
+      const typeWidth = 75;
+
+      const qtyX = 380;
+      const qtyWidth = 55;
+
+      const priceX = 435;
+      const priceWidth = 115;
+
+      // ---------------- TABLE HEADER ----------------
+
+      doc.rect(tableX, tableTop, tableWidth, headerHeight).fill("#008641");
+
+      doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10);
+
+      doc.text("Item", itemX, tableTop + 10, {
+        width: itemWidth,
+        align: "left",
+      });
+
+      doc.text("Type", typeX, tableTop + 10, {
+        width: typeWidth,
+        align: "left",
+      });
+
+      doc.text("Qty", qtyX, tableTop + 10, {
+        width: qtyWidth,
+        align: "center",
+      });
+
+      doc.text("Price", priceX, tableTop + 10, {
+        width: priceWidth,
+        align: "right",
+      });
+
+      // ---------------- TABLE ITEMS ----------------
 
       let y = tableTop + 40;
-
-      /*
-       * ITEMS
-       */
 
       (bill?.items || []).forEach((item) => {
         const courseName =
@@ -158,76 +228,235 @@ const generateInvoicePdf = async (bill, order, user) => {
 
         const packageType = item?.packageType || "";
 
-        const qty = item?.quantity || 1;
+        const version =
+          typeof item?.version === "string" ? item.version.trim() : "";
+
+        const qty = Number(item?.quantity || 1);
 
         const price = Number(item?.price || 0);
 
-        doc.text(courseName, 50, y, {
-          width: 240,
+        // Calculate course name height
+        const courseNameHeight = doc.heightOfString(courseName, {
+          width: itemWidth,
+          font: "Helvetica",
+          fontSize: 10,
         });
 
-        doc.text(packageType, 320, y);
+        const versionHeight = version ? 15 : 0;
 
-        doc.text(String(qty), 390, y);
+        const rowHeight = Math.max(28, courseNameHeight + versionHeight + 10);
 
-        doc.text(`Rs. ${price.toFixed(2)}`, 470, y);
+        // ---------------- COURSE NAME ----------------
 
-        y += 28;
+        doc
+          .font("Helvetica")
+          .fontSize(10)
+          .fillColor("#000000")
+          .text(courseName, itemX, y, {
+            width: itemWidth,
+            align: "left",
+          });
 
-        doc.moveTo(40, y).lineTo(560, y).strokeColor("#e5e7eb").stroke();
+        // ---------------- PACKAGE TYPE ----------------
+
+        doc.text(packageType, typeX, y, {
+          width: typeWidth,
+          align: "left",
+        });
+
+        // ---------------- QUANTITY ----------------
+
+        doc.text(String(qty), qtyX, y, {
+          width: qtyWidth,
+          align: "center",
+        });
+
+        // ---------------- PRICE ----------------
+
+        doc.text(`Rs. ${price.toFixed(2)}`, priceX, y, {
+          width: priceWidth,
+          align: "right",
+        });
+
+        // ---------------- VERSION ----------------
+
+        if (version) {
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(9)
+            .fillColor("#000000")
+            .text(`Version: ${version}`, itemX, y + courseNameHeight + 2, {
+              width: itemWidth,
+              align: "left",
+            });
+        }
+
+        // ---------------- ROW LINE ----------------
+
+        y += rowHeight;
+
+        doc
+          .moveTo(tableX, y)
+          .lineTo(tableX + tableWidth, y)
+          .strokeColor("#e5e7eb")
+          .stroke();
 
         y += 10;
       });
 
-      /*
-       * TOTAL SECTION
-       */
+      // =========================================================
+      // TOTAL SECTION
+      // =========================================================
 
       y += 20;
 
       const priceBeforeDiscount = Number(bill?.subtotal || 0);
 
-      const baseAmount = Number(
-        (priceBeforeDiscount ).toFixed(2),
-      );
+      const baseAmount = Number(priceBeforeDiscount.toFixed(2));
 
       const subtotal = Number((baseAmount / 1.18).toFixed(2));
+
+      const gstAmount = Number((priceBeforeDiscount - subtotal).toFixed(2));
 
       const discount = Number(bill?.discount || 0);
 
       const grandTotal = Number((priceBeforeDiscount - discount).toFixed(2));
 
-      doc.roundedRect(300, y, 240, 150, 8).strokeColor("#d1d5db").stroke();
+      // Coupon comes from populated Bill.coupon
+      const couponCode = bill?.coupon?.code || bill?.couponCode || "";
 
-      doc.fontSize(11).fillColor("#000");
+      const hasCoupon = Boolean(couponCode);
 
-      doc.text("Subtotal", 320, y + 15);
-      doc.text(`Rs. ${subtotal.toFixed(2)}`, 470, y + 15);
+      // =========================================================
+      // TOTAL BOX
+      // =========================================================
 
-      doc.text("GST (18%)", 320, y + 40);
-      doc.text(
-        `Rs. ${(priceBeforeDiscount - subtotal).toFixed(2)}`,
-        470,
-        y + 40,
-      );
+      const boxX = 300;
+      const boxY = y;
+      const boxWidth = 240;
 
-      doc.text("Price Before Discount", 320, y + 65);
-      doc.text(`Rs. ${priceBeforeDiscount.toFixed(2)}`, 470, y + 65);
+      const boxHeight = hasCoupon ? 175 : 150;
 
-      doc.text("Discount", 320, y + 90);
-      doc.text(`Rs. ${discount.toFixed(2)}`, 470, y + 90);
+      doc
+        .roundedRect(boxX, boxY, boxWidth, boxHeight, 8)
+        .strokeColor("#d1d5db")
+        .stroke();
 
-      doc.fontSize(11).font("Helvetica-Bold").fillColor("#008641");
+      // =========================================================
+      // TOTAL BOX COLUMNS
+      // =========================================================
 
-      doc.text("Grand Total", 320, y + 120);
-      doc.text(`Rs. ${grandTotal.toFixed(2)}`, 470, y + 120);
+      const labelX = boxX + 20;
 
-      /*
-       * FOOTER
-       */
+      // Right value column
+      const valueX = boxX + 115;
+
+      const valueWidth = 105;
+
+      // =========================================================
+      // SUBTOTAL
+      // =========================================================
+
+      doc.font("Helvetica").fontSize(11).fillColor("#000000");
+
+      doc.text("Subtotal", labelX, boxY + 15, {
+        width: 100,
+        align: "left",
+      });
+
+      doc.text(`Rs. ${subtotal.toFixed(2)}`, valueX, boxY + 15, {
+        width: valueWidth,
+        align: "right",
+      });
+
+      // =========================================================
+      // GST
+      // =========================================================
+
+      doc.text("GST (18%)", labelX, boxY + 40, {
+        width: 100,
+        align: "left",
+      });
+
+      doc.text(`Rs. ${gstAmount.toFixed(2)}`, valueX, boxY + 40, {
+        width: valueWidth,
+        align: "right",
+      });
+
+      // =========================================================
+      // PRICE BEFORE DISCOUNT
+      // =========================================================
+
+      doc.text("Price Before Discount", labelX, boxY + 65, {
+        width: 125,
+        align: "left",
+      });
+
+      doc.text(`Rs. ${priceBeforeDiscount.toFixed(2)}`, valueX, boxY + 65, {
+        width: valueWidth,
+        align: "right",
+      });
+
+      // =========================================================
+      // DISCOUNT
+      // =========================================================
+
+      doc.text("Discount", labelX, boxY + 90, {
+        width: 100,
+        align: "left",
+      });
+
+      doc.text(`Rs. ${discount.toFixed(2)}`, valueX, boxY + 90, {
+        width: valueWidth,
+        align: "right",
+      });
+
+      // =========================================================
+      // COUPON CODE
+      // =========================================================
+
+      if (hasCoupon) {
+        doc.font("Helvetica").fontSize(10).fillColor("#000000");
+
+        doc.text("Coupon Code", labelX, boxY + 115, {
+          width: 100,
+          align: "left",
+        });
+
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(10)
+          .text(couponCode, valueX, boxY + 115, {
+            width: valueWidth,
+            align: "right",
+          });
+      }
+
+      // =========================================================
+      // GRAND TOTAL
+      // =========================================================
+
+      const grandTotalY = hasCoupon ? boxY + 145 : boxY + 120;
+
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#008641");
+
+      doc.text("Grand Total", labelX, grandTotalY, {
+        width: 100,
+        align: "left",
+      });
+
+      doc.text(`Rs. ${grandTotal.toFixed(2)}`, valueX, grandTotalY, {
+        width: valueWidth,
+        align: "right",
+      });
+
+      // =========================================================
+      // FOOTER
+      // =========================================================
 
       doc
         .fillColor("#6b7280")
+        .font("Helvetica")
         .fontSize(10)
         .text("Thank you for choosing etrainIndia.", 40, 730, {
           align: "center",
@@ -249,10 +478,15 @@ const generateInvoicePdf = async (bill, order, user) => {
         width: 520,
       });
 
+      // =========================================================
+      // END PDF
+      // =========================================================
+
       doc.end();
     });
   } catch (error) {
     console.error("Invoice PDF Generation Error:", error);
+
     throw error;
   }
 };

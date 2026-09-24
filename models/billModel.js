@@ -23,10 +23,10 @@ const billSchema = new mongoose.Schema(
         },
 
         version: {
-            type: String,
-            trim: true,
-            default: null,
-          },
+          type: String,
+          trim: true,
+          default: null,
+        },
 
         quantity: {
           type: Number,
@@ -65,6 +65,12 @@ const billSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+    },
+
+    couponCode: {
+      type: String,
+      trim: true,
+      default: null,
     },
 
     grandTotal: {
