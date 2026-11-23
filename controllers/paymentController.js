@@ -124,10 +124,35 @@ const createOrder = async (req, res) => {
   }
 };
 
+const sendPaymentEmails = async ({ order, bill, payment, paymentId, method }) => {
+  const user = await User.findById(order.user);
+  const customerEmail = user?.email || payment.meta?.email;
+
+  if (!customerEmail || !emailService) return;
+
+  const populatedOrder = await Order.findById(order._id).populate(
+    "cart.items.course",
+  );
+  const populatedBill = bill
+    ? await Bill.findById(bill._id).populate("items.course")
+    : null;
+  const emailUser = {
+    ...(user ? user.toObject() : {}),
+    email: customerEmail,
+  };
+
+  await emailService.sendPaymentSuccessEmail(
+    emailUser,
+    populatedOrder,
+    populatedBill,
+    { paymentId, method },
+  );
+};
+
 const verifyPayment = async (req, res) => {
   try {
     console.log("========== VERIFY PAYMENT ==========");
-    console.log("USER:", req.user);
+    console.log("USER ID:", req.user.id);
 
     const {
       razorpay_order_id,
@@ -136,7 +161,7 @@ const verifyPayment = async (req, res) => {
       meta = {},
     } = req.body;
 
-    console.log("BODY:", req.body);
+    console.log("Razorpay order:", razorpay_order_id);
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
@@ -149,15 +174,10 @@ const verifyPayment = async (req, res) => {
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-    console.log("Generated Signature:", generatedSignature);
-    console.log("Razorpay Signature:", razorpay_signature);
-
     const payment = await Payment.findOne({
       orderId: razorpay_order_id,
       user: req.user.id,
     });
-
-    console.log("Payment Found:", payment);
 
     if (!payment) {
       return res.status(404).json({
@@ -170,8 +190,6 @@ const verifyPayment = async (req, res) => {
       user: req.user.id,
     });
 
-    console.log("Order Found:", order);
-
     if (!order) {
       return res.status(404).json({
         error: "Order not found",
@@ -180,21 +198,40 @@ const verifyPayment = async (req, res) => {
 
     const bill = await Bill.findById(order.bill);
 
-    if (generatedSignature !== razorpay_signature) {
-      payment.status = "failed";
-      await payment.save();
+    const expected = Buffer.from(generatedSignature, "utf8");
+    const received = Buffer.from(String(razorpay_signature), "utf8");
+    const signatureValid =
+      expected.length === received.length &&
+      crypto.timingSafeEqual(expected, received);
 
-      order.status = "FAILED";
-      await order.save();
+    if (!signatureValid) {
+      // Never downgrade an order that was already paid and verified.
+      if (payment.status !== "paid" && order.status !== "PAID") {
+        payment.status = "failed";
+        await payment.save();
 
-      if (bill) {
-        bill.paymentStatus = "Failed";
-        await bill.save();
+        order.status = "FAILED";
+        await order.save();
+
+        if (bill) {
+          bill.paymentStatus = "Failed";
+          await bill.save();
+        }
       }
 
       return res.status(400).json({
         success: false,
         error: "Invalid payment signature",
+      });
+    }
+
+    // Retry-safe: a repeated verify call must not re-run the side effects
+    // (coupon usage, cart clear, email).
+    if (payment.status === "paid" && order.status === "PAID") {
+      return res.status(200).json({
+        success: true,
+        message: "Payment already verified",
+        orderId: order._id,
       });
     }
 
@@ -222,40 +259,24 @@ const verifyPayment = async (req, res) => {
 
     await Cart.findOneAndUpdate({ user: order.user }, { items: [] });
 
-    const user = await User.findById(order.user);
-    const customerEmail = user?.email || payment.meta?.email;
-
-    if (customerEmail && emailService) {
-      try {
-        const populatedOrder = await Order.findById(order._id).populate(
-          "cart.items.course",
-        );
-        const populatedBill = bill
-          ? await Bill.findById(bill._id).populate("items.course")
-          : null;
-        const emailUser = {
-          ...(user ? user.toObject() : {}),
-          email: customerEmail,
-        };
-        await emailService.sendPaymentSuccessEmail(
-          emailUser,
-          populatedOrder,
-          populatedBill,
-          {
-            paymentId: razorpay_payment_id,
-            method: meta.method || "Online",
-          },
-        );
-      } catch (emailError) {
-        console.error("Error sending payment emails:", emailError);
-      }
-    }
-
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Payment verified successfully",
       orderId: order._id,
     });
+
+    // The payment is already saved as PAID. Send the invoice email after the
+    // response so a slow PDF/email provider can't make the client time out.
+    sendPaymentEmails({
+      order,
+      bill,
+      payment,
+      paymentId: razorpay_payment_id,
+      method: meta.method || "Online",
+    }).catch((emailError) =>
+      console.error("Error sending payment emails:", emailError),
+    );
+    return;
   } catch (err) {
     console.error("Verify Payment Error:", err);
     return res.status(500).json({
